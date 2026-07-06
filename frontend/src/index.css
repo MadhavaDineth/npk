@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+:root {
+  /* Inter carries the Latin glyphs; Noto Sans Sinhala carries the Sinhala ones,
+     so the browser picks the right face per script. System fonts are the
+     graceful fallback when the web fonts can't load (offline). */
+  font-family: "Inter", "Noto Sans Sinhala", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Shared design tokens */
+  --brand: #059669;         /* emerald-600 */
+  --brand-strong: #047857;  /* emerald-700 */
+  --ring: rgba(16, 185, 129, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: #1f2937;               /* gray-800 for a touch more contrast */
+  letter-spacing: -0.006em;      /* subtle modern tightening */
+  background: #f2f8f4;           /* fallback before .app-bg paints */
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Tighter, more confident headings (Latin). */
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+/* Softer text selection in the brand colour. */
+::selection {
+  background: rgba(16, 185, 129, 0.22);
+  color: #064e3b;
+}
+
+/* Clear, on-brand keyboard focus ring across the app. */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Slim, unobtrusive scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: padding-box; }
+
+/* ---------------------------------------------------------------------------
+   App background: a soft, layered emerald→white→amber wash with two gentle
+   radial accents. Replaces the old flat 3-stop gradient on every full-screen
+   view for a richer, calmer surface. Fixed so it doesn't scroll away.
+   --------------------------------------------------------------------------- */
+.app-bg {
+  background-color: #f6faf7;
+  background-image:
+    radial-gradient(1100px 520px at 100% -8%, rgba(251, 191, 36, 0.14), transparent 60%),
+    radial-gradient(980px 680px at -8% 6%, rgba(16, 185, 129, 0.16), transparent 58%),
+    linear-gradient(180deg, #ecfdf5 0%, #ffffff 46%, #fffbeb 100%);
+  background-attachment: fixed;
+}
+
+/* Emerald gradient text for hero titles. */
+.text-gradient-brand {
+  background: linear-gradient(120deg, #047857 0%, #10b981 55%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* A softer, layered card shadow for a little more depth than shadow-sm. */
+.shadow-soft {
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 8px 24px -12px rgba(16, 24, 40, 0.12);
+}
+
+/* Gentle lift on hover — opt-in via class. */
+.lift {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(16, 24, 40, 0.05),
+    0 18px 40px -16px rgba(16, 24, 40, 0.22);
+}
+
+/* Slow float for the hero logo badge. */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-floaty {
+  animation: floaty 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-floaty { animation: none; }
+  .lift { transition: none; }
+}
+
+/* Printing the fertilizer slip: hide the whole on-screen dashboard, then
+   reveal only the .print-only slip and float it to the top of the page. Using
+   visibility (not display) on the tree avoids reflow bugs; the slip itself is
+   repositioned so it prints alone from the top-left. */
+.print-only { display: none; }
+@media print {
+  body { background: #fff !important; }
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; }
+  .print-only {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+  }
+}
