@@ -1,0 +1,4 @@
+lk.npk.soil.test.app-androidTest-0 C:\wamp64\www\npk\android-kotlin\app\build\generated\res\resValues\androidTest\debug
+lk.npk.soil.test.app-mergeDebugAndroidTestResources-1 C:\wamp64\www\npk\android-kotlin\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+lk.npk.soil.test.app-mergeDebugAndroidTestResources-2 C:\wamp64\www\npk\android-kotlin\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+lk.npk.soil.test.app-debugAndroidTest-3 C:\wamp64\www\npk\android-kotlin\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

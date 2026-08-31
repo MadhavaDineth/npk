@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Droplet, Leaf, AlertTriangle, RefreshCw, Sprout, TrendingUp, CheckCircle2, XCircle, Languages, Star, MapPin, Save, Trash2, FolderOpen, ArrowRight, ArrowLeft, Calendar, ScanLine, Wallet, Gauge, BarChart3, Printer, FileText, Shield } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Droplet, Leaf, AlertTriangle, RefreshCw, Sprout, TrendingUp, CheckCircle2, XCircle, Languages, Star, MapPin, Save, Trash2, FolderOpen, ArrowRight, ArrowLeft, Calendar, ScanLine, Wallet, Gauge, BarChart3, Printer, FileText, Shield, LayoutGrid, Truck, Users, LogOut, Filter, Search, Map as MapIcon } from "lucide-react";
+import DistrictGlobe3D from "./DistrictGlobe3D";
 
 // Django backend base URL. Override at build time with VITE_API_BASE if needed.
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
@@ -392,6 +393,42 @@ const T = {
   cropAcresCol: { si: "අක්කර", en: "Acres" },
   cropShareCol: { si: "කොටස", en: "Share" },
   topCropCol: { si: "ප්‍රධාන බෝගය", en: "Top crop" },
+  // Government portal — tabs, filters, KPIs, 3D map
+  govTabMap: { si: "3D සිතියම", en: "3D Map" },
+  govTabOverview: { si: "දළ විශ්ලේෂණය", en: "Overview" },
+  govTabFertilizer: { si: "පොහොර ඉල්ලුම", en: "Fertilizer" },
+  govTabCrops: { si: "බෝග ව්‍යාප්තිය", en: "Crops" },
+  govTabStaff: { si: "නිලධාරීන්", en: "Staff" },
+  govKpiLands: { si: "ලියාපදිංචි ඉඩම්", en: "Registered lands" },
+  govKpiDistricts: { si: "වාර්තා කරන දිස්ත්‍රික්", en: "Reporting districts" },
+  govKpiCrops: { si: "බෝග වර්ග", en: "Crop types" },
+  govKpiAcres: { si: "මුළු අක්කර", en: "Total acres" },
+  govKpiHealth: { si: "සාමාන්‍ය පස් සෞඛ්‍යය", en: "Avg soil health" },
+  govKpiFertCost: { si: "පොහොර පිරිවැය", en: "Fertilizer cost" },
+  govFilterDistrict: { si: "සියලු දිස්ත්‍රික්", en: "All districts" },
+  govFilterHealth: { si: "සියලු සෞඛ්‍ය මට්ටම්", en: "All health levels" },
+  govSearch: { si: "දිස්ත්‍රික්කයක් සොයන්න...", en: "Search a district..." },
+  govRefresh: { si: "යාවත්කාලීන", en: "Refresh" },
+  govClearFilters: { si: "පෙරහන් ඉවත් කරන්න", en: "Clear filters" },
+  govShowing: { si: "පෙන්වන දිස්ත්‍රික්", en: "Districts shown" },
+  govGlobeTitle: { si: "ත්‍රිමාණ පස් සෞඛ්‍ය සිතියම", en: "3D Soil Health Map" },
+  govGlobeHint: { si: "තීරුවක උස එම දිස්ත්‍රික්කයේ පස් සෞඛ්‍ය ලකුණයි. තෝරන්න ක්ලික් කරන්න.", en: "Bar height is that district's soil-health score. Click one to select it." },
+  govGlobeDrag: { si: "කරකැවීමට අදින්න", en: "Drag to rotate" },
+  govGlobePause: { si: "නවතන්න", en: "Pause" },
+  govGlobeRotate: { si: "කරකවන්න", en: "Rotate" },
+  govGlobeUnsupported: { si: "ඔබේ බ්‍රව්සරය 3D සඳහා සහාය නොදක්වයි. පහත වගු භාවිතා කරන්න.", en: "This browser doesn't support 3D. Use the tables below." },
+  govNutrientChart: { si: "දිස්ත්‍රික්ක අනුව සාමාන්‍ය පෝෂක", en: "Average nutrients by district" },
+  govNutrientHint: { si: "එක් එක් දිස්ත්‍රික්කයේ නවතම කියවීම්වල සාමාන්‍යය (mg/kg)", en: "Average of each district's latest readings (mg/kg)" },
+  govAttention: { si: "අවධානය අවශ්‍ය දිස්ත්‍රික්ක", en: "Districts needing attention" },
+  govAttentionNone: { si: "දැනට අවධානය අවශ්‍ය දිස්ත්‍රික්කයක් නැත", en: "No districts need attention right now" },
+  govLowHealth: { si: "පස් සෞඛ්‍යය අඩුයි", en: "Low soil health" },
+  govTopDistricts: { si: "හොඳම දිස්ත්‍රික්ක", en: "Best-performing districts" },
+  govNoMatch: { si: "පෙරහනට ගැලපෙන දිස්ත්‍රික්කයක් නැත", en: "No districts match this filter" },
+  govSelected: { si: "තෝරාගත්", en: "Selected" },
+  govViewAll: { si: "සියල්ල බලන්න", en: "View all" },
+  govLoading: { si: "දත්ත ලබා ගනිමින්...", en: "Loading data..." },
+  govLoginHint: { si: "රජයේ නිලධාරීන් සහ කෘෂිකර්ම උපදේශකයින් සඳහා පමණි", en: "For government officers and agronomists only" },
+  govPortalTag: { si: "ජාතික මෙහෙයුම් මධ්‍යස්ථානය", en: "National operations centre" },
   // Farmer dashboard — planting calendar & growing advice
   plantAdviceTitle: { si: "වගා දින දර්ශනය සහ වගා උපදෙස්", en: "Planting Calendar & Growing Advice" },
   plantAdviceHint: { si: "මෙම බෝගය වවන්නට සුදුසු කාලය සහ වගා ක්‍රමය", en: "The best time to plant this crop and how to grow it" },
@@ -599,7 +636,12 @@ const T = {
   costSizeLabel: { si: "ඉඩමේ ප්‍රමාණය (අක්කර)", en: "Field size (acres)" },
   costCalcBtn: { si: "වියදම ගණනය කරන්න", en: "Calculate Cost" },
   costCalculating: { si: "ගණනය කරමින්...", en: "Calculating..." },
-  costTotal: { si: "මුළු වියදම", en: "Total Cost" },
+  costTotal: { si: "පොහොර වියදම", en: "Fertilizer Cost" },
+  // Full cultivation cost = soil-based fertilizer + labor + seed + other
+  totalCostTitle: { si: "සම්පූර්ණ වගා වියදම (බෝගය සඳහා)", en: "Total Cultivation Cost (for this crop)" },
+  costFertSoil: { si: "පොහොර (පස අනුව)", en: "Fertilizer (soil-based)" },
+  costGrandTotal: { si: "මුළු වියදම", en: "Grand total" },
+  totalCostNote: { si: "පොහොර වියදම ඔබේ පස අනුව; අනෙක් වියදම් අක්කරයකට සම්මත අගයන් (පරිපාලක > බෝග ආර්ථිකය).", en: "Fertilizer is soil-based; other costs use per-acre standards (Admin > Crop Economics)." },
   costQty: { si: "ප්‍රමාණය", en: "Quantity" },
   costUnitPrice: { si: "ඒකක මිල", en: "Unit Price" },
   costSubtotal: { si: "උප එකතුව", en: "Subtotal" },
@@ -693,6 +735,37 @@ const T = {
   priceTitle: { si: "පොහොර මිල ගණන් (LKR/kg)", en: "Fertilizer Prices (LKR/kg)" },
   priceSaveBtn: { si: "මිල යාවත්කාලීන කරන්න", en: "Update price" },
   priceSaved: { si: "මිල යාවත්කාලීන විය", en: "Price updated" },
+
+  // Admin: crop (harvest) prices
+  cropPriceTitle: { si: "බෝග මිල ගණන් (LKR/kg)", en: "Crop Prices (LKR/kg)" },
+  cropPriceEmpty: { si: "බෝග කිසිවක් නැත", en: "No crops yet" },
+
+  // Admin: daily market prices + crop economics
+  marketPriceTitle: { si: "වෙළඳපොළ මිල — අද දිනට (LKR/kg)", en: "Market Prices — today (LKR/kg)" },
+  marketPriceHint: { si: "එක් එක් වෙළඳපොළේ අද මිල ඇතුළත් කර සුරකින්න", en: "Enter today's price at each market, then save" },
+  savePricesBtn: { si: "මිල ගණන් සුරකින්න", en: "Save prices" },
+  econTitle: { si: "බෝග ආර්ථිකය (අක්කරයකට)", en: "Crop Economics (per acre)" },
+  econYield: { si: "අස්වැන්න (kg)", en: "Yield (kg)" },
+  econFert: { si: "පොහොර", en: "Fertilizer" },
+  econLabor: { si: "කම්කරු", en: "Labor" },
+  econSeed: { si: "බීජ", en: "Seed" },
+  econOther: { si: "වෙනත්", en: "Other" },
+  econTotal: { si: "මුළු වියදම", en: "Total cost" },
+  econSaveBtn: { si: "සුරකින්න", en: "Save" },
+
+  // Farmer: profit analysis + what-to-plant prediction
+  profitTitle: { si: "ලාභ විශ්ලේෂණය (ඔබේ ඉඩම)", en: "Profit Analysis (your land)" },
+  profitIncome: { si: "ආදායම", en: "Income" },
+  profitCost: { si: "වියදම", en: "Cost" },
+  profitNet: { si: "ශුද්ධ ලාභය", en: "Net profit" },
+  profitBestMarket: { si: "හොඳම වෙළඳපොළ (මෙතන විකුණන්න)", en: "Best market to sell" },
+  profitNoPrice: { si: "වෙළඳපොළ මිලක් තවම නැත — ", en: "No market price yet — " },
+  profitReference: { si: "යොමු මිල", en: "reference price" },
+  profitNoData: { si: "ලාභ දත්ත නොමැත (බෝගය / මිල සකසන්න)", en: "No profit data (set a crop / prices)" },
+  predictTitle: { si: "මොනවා වැව්වොත් වැඩිම ලාභද? (අනාවැකිය)", en: "What to plant for best profit? (prediction)" },
+  predictCurrent: { si: "දැන් වවනවා", en: "current" },
+  predictProfitCol: { si: "පුරෝකථන ලාභය", en: "Predicted profit" },
+  predictSizeLabel: { si: "ඉඩමේ ප්‍රමාණය (අක්කර)", en: "Land size (acres)" },
 
   // Admin: add a new fertilizer type
   addFertTitle: { si: "නව පොහොර වර්ගයක් එක් කරන්න", en: "Add a New Fertilizer Type" },
@@ -1048,6 +1121,19 @@ function CostEstimatePanel({ crop, activeCropKey, lang, defaultSize, defaultFiel
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
+  const [econ, setEcon] = useState(null); // this crop's per-acre labor/seed/other costs
+
+  // Pull the crop's standard cost components so the fertilizer estimate can be
+  // rolled up into a full cultivation cost (fertilizer is soil-based; the rest
+  // are per-acre standards maintained by the admin).
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_BASE}/api/crop-economics/`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => { if (alive) setEcon(list.find((e) => e.crop_key === activeCropKey) || null); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [activeCropKey]);
 
   // The estimate is locked to the logged-in land's OWN field (defaultFieldId).
   // There is deliberately no cross-land field picker here — a farmer only ever
@@ -1097,6 +1183,15 @@ function CostEstimatePanel({ crop, activeCropKey, lang, defaultSize, defaultFiel
         { label: "MOP", kg: result.mop_kg, cost: result.mop_cost },
       ]
     : [];
+
+  // Roll the soil-based fertilizer cost up into a full cultivation cost. Labor /
+  // seed / other are per-acre standards, scaled to the acreage the estimate used
+  // (so every line matches the same field size as the fertilizer figure).
+  const acresUsed = result ? result.size_acres : sizeAcres;
+  const laborCost = econ ? econ.labor_cost_per_acre * acresUsed : 0;
+  const seedCost = econ ? econ.seed_cost_per_acre * acresUsed : 0;
+  const otherCost = econ ? econ.other_cost_per_acre * acresUsed : 0;
+  const grandTotal = (result ? result.total_cost : 0) + laborCost + seedCost + otherCost;
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
@@ -1156,6 +1251,26 @@ function CostEstimatePanel({ crop, activeCropKey, lang, defaultSize, defaultFiel
             <span className="font-medium">{T.costTotal[lang]}</span>
             <span className="text-lg font-bold">LKR {result.total_cost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
           </div>
+
+          {econ && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="text-sm font-semibold text-gray-700 mb-2">{T.totalCostTitle[lang]}</div>
+              <div className="space-y-1 text-sm">
+                {[[T.costFertSoil, result.total_cost], [T.econLabor, laborCost], [T.econSeed, seedCost], [T.econOther, otherCost]].map(([lbl, val], i) => (
+                  <div key={i} className="flex justify-between">
+                    <span className="text-gray-500">{lbl[lang]}</span>
+                    <span className="text-gray-700">LKR {val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center justify-between bg-amber-50 text-amber-800 px-4 py-3 rounded-xl">
+                <span className="font-medium">{T.costGrandTotal[lang]}</span>
+                <span className="text-lg font-bold">LKR {grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              </div>
+              <p className="text-[11px] text-gray-300 mt-2">{T.totalCostNote[lang]}</p>
+            </div>
+          )}
+
           <p className="text-[11px] text-gray-300 mt-2">{T.costLoggedNote[lang]}</p>
         </div>
       )}
@@ -1450,7 +1565,7 @@ function AdminView({ lang, onBack, langBtn }) {
   // ---- password gate ----
   if (!authed) {
     return (
-      <div className="min-h-screen app-bg p-4 md:p-8 flex items-center justify-center">
+      <div className="gov-shell p-4 md:p-8 flex items-center justify-center">
         <form onSubmit={tryLogin} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 w-full max-w-sm">
           <div className="flex items-center gap-2 mb-4">
             <div className="bg-emerald-600 p-2.5 rounded-xl"><Sprout className="text-white" size={20} /></div>
@@ -1474,7 +1589,7 @@ function AdminView({ lang, onBack, langBtn }) {
 
   // ---- admin dashboard ----
   return (
-    <div className="min-h-screen app-bg p-4 md:p-8">
+    <div className="gov-shell p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600 transition">
@@ -1497,7 +1612,7 @@ function AdminView({ lang, onBack, langBtn }) {
         {msg && <div className="mb-4 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl text-sm inline-flex items-center gap-2"><CheckCircle2 size={16} /> {msg}</div>}
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-6 flex gap-2">
+        <div className="gov-tabs mb-6">
           {[
             { key: "model", label: T.tabModel[lang], icon: <TrendingUp size={15} /> },
             { key: "cost", label: T.tabCost[lang], icon: <Wallet size={15} /> },
@@ -1505,10 +1620,7 @@ function AdminView({ lang, onBack, langBtn }) {
             { key: "fields", label: T.tabFields[lang], icon: <MapPin size={15} /> },
             { key: "staff", label: T.tabStaff[lang], icon: <Shield size={15} /> },
           ].map((t) => (
-            <button
-              key={t.key} onClick={() => setTab(t.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition ${tab === t.key ? "bg-emerald-600 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"}`}
-            >
+            <button key={t.key} onClick={() => setTab(t.key)} className={`gov-tab ${tab === t.key ? "active" : ""}`}>
               {t.icon} {t.label}
             </button>
           ))}
@@ -1517,7 +1629,7 @@ function AdminView({ lang, onBack, langBtn }) {
         {tab === "cost" && <AdminCostTab pw={pw} lang={lang} />}
         {tab === "analytics" && <AdminAnalyticsTab lang={lang} />}
         {tab === "fields" && <AdminFieldsTab lang={lang} />}
-        {tab === "staff" && <StaffManager lang={lang} authHeaders={{ "X-Admin-Password": pw }} />}
+        {tab === "staff" && <StaffManager lang={lang} authHeaders={{ "X-Admin-Password": pw }} dark />}
 
         {tab === "model" && (
         <>
@@ -1657,10 +1769,157 @@ function AdminView({ lang, onBack, langBtn }) {
   );
 }
 
+// Farmer dashboard card: income / cost / profit for the land's crop, which market
+// to sell at, and a prediction of which crop would be most profitable here.
+function ProfitPanel({ token, lang, defaultSize }) {
+  const [data, setData] = useState(null);
+  const [predict, setPredict] = useState(null);
+  const [names, setNames] = useState({});
+  const [err, setErr] = useState(false);
+  const [size, setSize] = useState(defaultSize || 1); // acreage the prediction is scaled to
+
+  useEffect(() => { if (defaultSize) setSize(defaultSize); }, [defaultSize]);
+
+  // Profit for the current crop + crop-name lookup (independent of the size box).
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    (async () => {
+      try {
+        const [p, cr] = await Promise.all([
+          landFetch(token, "/api/land/profit/"),
+          fetch(`${API_BASE}/api/crops/`),
+        ]);
+        if (!alive) return;
+        setData(p.ok ? await p.json() : null);
+        setErr(!p.ok);
+        if (cr.ok) {
+          const list = await cr.json();
+          setNames(Object.fromEntries(list.map((c) => [c.crop_key, lang === "si" && c.name_si ? c.name_si : c.name_en])));
+        }
+      } catch { if (alive) { setData(null); setErr(true); } }
+    })();
+    return () => { alive = false; };
+  }, [token, lang]);
+
+  // Prediction re-runs whenever the acreage changes, so profits scale to the land.
+  useEffect(() => {
+    if (!token || !(size > 0)) return;
+    let alive = true;
+    landFetch(token, `/api/land/profit-predict/?size_acres=${size}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d) setPredict(d); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [token, size]);
+
+  const money = (n) => "LKR " + Math.round(n).toLocaleString();
+  const nm = (k) => names[k] || k;
+
+  return (
+    <>
+      {/* Profit analysis */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Wallet size={18} className="text-emerald-600" /> {T.profitTitle[lang]}</h3>
+        {!data ? (
+          <p className="text-sm text-gray-400">{err ? T.profitNoData[lang] : "…"}</p>
+        ) : (
+          <>
+            {/* Net profit leads — it is the number the farmer actually wants.
+                Income and cost sit under it as the supporting arithmetic. */}
+            <div className={`rounded-2xl p-4 mb-3 ${data.profit >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
+              <div className="text-sm text-gray-500 mb-1">{T.profitNet[lang]}</div>
+              <div className={`text-3xl font-extrabold leading-tight ${data.profit >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                {money(data.profit)}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="rounded-xl bg-white border border-gray-200 p-3">
+                <div className="text-sm text-gray-500">{T.profitIncome[lang]}</div>
+                <div className="text-lg text-emerald-700 font-bold">{money(data.income)}</div>
+              </div>
+              <div className="rounded-xl bg-white border border-gray-200 p-3">
+                <div className="text-sm text-gray-500">{T.profitCost[lang]}</div>
+                <div className="text-lg text-amber-700 font-bold">− {money(data.cost)}</div>
+              </div>
+            </div>
+            <div className="text-sm text-gray-600">
+              {data.best_market ? (
+                <span><span className="text-gray-400">{T.profitBestMarket[lang]}: </span>
+                  <span className="font-medium text-gray-800">{lang === "si" && data.best_market.name_si ? data.best_market.name_si : data.best_market.name_en}</span>
+                  {" — "}LKR {data.price_per_kg}/kg</span>
+              ) : (
+                <span className="text-amber-600">{T.profitNoPrice[lang]}LKR {data.price_per_kg}/kg ({T.profitReference[lang]})</span>
+              )}
+            </div>
+            {data.all_markets && data.all_markets.length > 1 && (
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                {data.all_markets.map((m) => (
+                  <span key={m.key} className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{m.name_en}: {m.price_per_kg}</span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* What to plant (prediction) */}
+      {predict && predict.crops && predict.crops.length > 0 && (
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2"><TrendingUp size={18} className="text-emerald-600" /> {T.predictTitle[lang]}</h3>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-400">{T.predictSizeLabel[lang]}</label>
+              <input type="number" min="0.1" step="0.1" value={size}
+                onChange={(e) => setSize(+e.target.value)}
+                className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+            </div>
+          </div>
+          {/* Stacked cards rather than a table: one crop per row, ranked, with
+              the profit as the dominant number — readable on a phone outdoors. */}
+          <div className="space-y-2">
+            {predict.crops.map((c, i) => {
+              const isCurrent = c.crop_key === predict.current_crop;
+              const isBest = i === 0;
+              return (
+                <div key={c.crop_key}
+                  className={`flex items-center gap-3 rounded-xl p-3 border ${
+                    isBest ? "bg-emerald-50 border-emerald-300" : "bg-white border-gray-200"}`}>
+                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                    isBest ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-500"}`}>
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-gray-800 truncate">{nm(c.crop_key)}</div>
+                    <div className="text-sm text-gray-500">
+                      {c.price_per_kg ? `LKR ${c.price_per_kg}/kg` : "—"}
+                      {isCurrent && <span className="ml-2 text-emerald-700 font-medium">· {T.predictCurrent[lang]}</span>}
+                    </div>
+                  </div>
+                  <div className={`text-right font-bold whitespace-nowrap ${c.profit >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                    {money(c.profit)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // Admin tab: fertilizer price editor + monthly budget chart + recent cost log.
 function AdminCostTab({ pw, lang }) {
   const [prices, setPrices] = useState([]);
   const [edits, setEdits] = useState({});
+  const [crops, setCrops] = useState([]);           // crop guidelines (for prices)
+  const [cropEdits, setCropEdits] = useState({});   // crop_key -> edited price
+  const [markets, setMarkets] = useState([]);       // selling markets
+  const [mPrices, setMPrices] = useState([]);       // today's market prices
+  const [mpEdits, setMpEdits] = useState({});       // "market|crop" -> edited price
+  const [econ, setEcon] = useState([]);             // crop economics rows
+  const [econEdits, setEconEdits] = useState({});   // "crop|field" -> edited value
   const [summary, setSummary] = useState(null);
   const [log, setLog] = useState([]);
   const [regions, setRegions] = useState(null); // region-fertilizer report
@@ -1672,16 +1931,24 @@ function AdminCostTab({ pw, lang }) {
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(null), 3000); };
 
   async function loadAll() {
-    const [pr, su, lo, rg] = await Promise.all([
+    const [pr, su, lo, rg, cr, mk, mp, ec] = await Promise.all([
       fetch(`${API_BASE}/api/fertilizer-types/`),
       fetch(`${API_BASE}/api/cost-summary/?months=6`),
       fetch(`${API_BASE}/api/cost-estimates/?limit=20`),
       fetch(`${API_BASE}/api/region-fertilizer/`),
+      fetch(`${API_BASE}/api/crops/`),
+      fetch(`${API_BASE}/api/markets/`),
+      fetch(`${API_BASE}/api/market-prices/?date=today`),
+      fetch(`${API_BASE}/api/crop-economics/`),
     ]);
     if (pr.ok) setPrices(await pr.json());
     if (su.ok) setSummary(await su.json());
     if (lo.ok) setLog(await lo.json());
     if (rg.ok) setRegions(await rg.json());
+    if (cr.ok) setCrops(await cr.json());
+    if (mk.ok) setMarkets(await mk.json());
+    if (mp.ok) setMPrices(await mp.json());
+    if (ec.ok) setEcon(await ec.json());
   }
 
   useEffect(() => { loadAll(); }, []);
@@ -1701,6 +1968,73 @@ function AdminCostTab({ pw, lang }) {
       setBusy(false);
     }
   }
+
+  async function saveCropPrice(cropKey) {
+    const value = cropEdits[cropKey];
+    if (value === undefined || value === "") return;
+    setBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/crops/${cropKey}/price/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-Admin-Password": pw },
+        body: JSON.stringify({ price_per_kg: Number(value) }),
+      });
+      if (res.ok) { await loadAll(); flash(T.priceSaved[lang]); }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveMarketPrices() {
+    const entries = Object.entries(mpEdits).filter(([, v]) => v !== "" && v !== undefined);
+    if (entries.length === 0) return;
+    setBusy(true);
+    try {
+      for (const [key, v] of entries) {
+        const [market_key, crop_key] = key.split("|");
+        await fetch(`${API_BASE}/api/market-prices/set/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Password": pw },
+          body: JSON.stringify({ market_key, crop_key, price_per_kg: Number(v) }),
+        });
+      }
+      setMpEdits({});
+      await loadAll();
+      flash(T.priceSaved[lang]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveEcon(cropKey) {
+    const payload = {};
+    for (const f of ["yield_kg_per_acre", "fertilizer_cost_per_acre", "labor_cost_per_acre", "seed_cost_per_acre", "other_cost_per_acre"]) {
+      const v = econEdits[`${cropKey}|${f}`];
+      if (v !== undefined && v !== "") payload[f] = Number(v);
+    }
+    if (Object.keys(payload).length === 0) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/crop-economics/${cropKey}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-Admin-Password": pw },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) { await loadAll(); flash(T.priceSaved[lang]); }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Look up an existing market price for a (market, crop) on the loaded day.
+  const priceOf = (marketKey, cropKey) => {
+    const row = mPrices.find((r) => r.market_key === marketKey && r.crop_key === cropKey);
+    return row ? row.price_per_kg : "";
+  };
+  const econVal = (cropKey, field) => {
+    const row = econ.find((e) => e.crop_key === cropKey);
+    return row ? row[field] : 0;
+  };
 
   async function addFertilizer() {
     if (!newFert.key.trim() || !newFert.name_en.trim()) return;
@@ -1787,6 +2121,125 @@ function AdminCostTab({ pw, lang }) {
         </div>
       </div>
 
+      {/* Crop (harvest) prices — maintained alongside fertilizer prices */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Wallet size={18} className="text-emerald-600" /> {T.cropPriceTitle[lang]}</h3>
+        {crops.length === 0 ? (
+          <p className="text-sm text-gray-400">{T.cropPriceEmpty[lang]}</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {crops.map((c) => (
+              <div key={c.crop_key} className="rounded-xl bg-gray-50 p-3">
+                <div className="text-xs text-gray-400 mb-1">{c.name_en}{c.name_si ? ` (${c.name_si})` : ""}</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" step="0.1"
+                    defaultValue={c.price_per_kg}
+                    onChange={(e) => setCropEdits((s) => ({ ...s, [c.crop_key]: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  />
+                  <button onClick={() => saveCropPrice(c.crop_key)} disabled={busy} className="shrink-0 bg-gray-800 hover:bg-gray-900 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                    {T.priceSaveBtn[lang]}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Daily market prices (per market x crop) */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+        <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2"><Wallet size={18} className="text-emerald-600" /> {T.marketPriceTitle[lang]}</h3>
+        <p className="text-xs text-gray-400 mb-3">{T.marketPriceHint[lang]}</p>
+        {markets.length === 0 || crops.length === 0 ? (
+          <p className="text-sm text-gray-400">{T.cropPriceEmpty[lang]}</p>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="text-left text-gray-400 border-b border-gray-100">
+                    <th className="py-2 pr-3 font-medium sticky left-0 bg-white">{lang === "si" ? "බෝගය" : "Crop"}</th>
+                    {markets.map((m) => (
+                      <th key={m.key} className="py-2 px-2 font-medium whitespace-nowrap">{lang === "si" && m.name_si ? m.name_si : m.name_en}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {crops.map((c) => (
+                    <tr key={c.crop_key} className="border-b border-gray-50">
+                      <td className="py-1.5 pr-3 text-gray-700 whitespace-nowrap sticky left-0 bg-white">{lang === "si" && c.name_si ? c.name_si : c.name_en}</td>
+                      {markets.map((m) => (
+                        <td key={m.key} className="py-1.5 px-1">
+                          <input type="number" step="0.1" min="0"
+                            key={`${m.key}|${c.crop_key}|${priceOf(m.key, c.crop_key)}`}
+                            defaultValue={priceOf(m.key, c.crop_key)}
+                            onChange={(e) => setMpEdits((s) => ({ ...s, [`${m.key}|${c.crop_key}`]: e.target.value }))}
+                            className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button onClick={saveMarketPrices} disabled={busy}
+              className="mt-3 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+              <CheckCircle2 size={14} /> {T.savePricesBtn[lang]}
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Crop economics (yield + costs per acre) */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Wallet size={18} className="text-amber-600" /> {T.econTitle[lang]}</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="text-left text-gray-400 border-b border-gray-100">
+                <th className="py-2 pr-3 font-medium">{lang === "si" ? "බෝගය" : "Crop"}</th>
+                <th className="py-2 px-2 font-medium">{T.econYield[lang]}</th>
+                <th className="py-2 px-2 font-medium">{T.econFert[lang]}</th>
+                <th className="py-2 px-2 font-medium">{T.econLabor[lang]}</th>
+                <th className="py-2 px-2 font-medium">{T.econSeed[lang]}</th>
+                <th className="py-2 px-2 font-medium">{T.econOther[lang]}</th>
+                <th className="py-2 px-2 font-medium">{T.econTotal[lang]}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {econ.map((e) => {
+                const cn = crops.find((c) => c.crop_key === e.crop_key);
+                const label = cn ? (lang === "si" && cn.name_si ? cn.name_si : cn.name_en) : e.crop_key;
+                return (
+                  <tr key={e.crop_key} className="border-b border-gray-50">
+                    <td className="py-1.5 pr-3 text-gray-700 whitespace-nowrap">{label}</td>
+                    {["yield_kg_per_acre", "fertilizer_cost_per_acre", "labor_cost_per_acre", "seed_cost_per_acre", "other_cost_per_acre"].map((f) => (
+                      <td key={f} className="py-1.5 px-1">
+                        <input type="number" step="1" min="0"
+                          key={`${e.crop_key}|${f}|${e[f]}`}
+                          defaultValue={e[f]}
+                          onChange={(ev) => setEconEdits((s) => ({ ...s, [`${e.crop_key}|${f}`]: ev.target.value }))}
+                          className="w-24 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                      </td>
+                    ))}
+                    <td className="py-1.5 px-2 text-gray-500 whitespace-nowrap">LKR {Math.round(e.total_cost_per_acre).toLocaleString()}</td>
+                    <td className="py-1.5 pl-2">
+                      <button onClick={() => saveEcon(e.crop_key)} disabled={busy}
+                        className="bg-gray-800 hover:bg-gray-900 disabled:opacity-40 text-white px-3 py-1 rounded-lg text-xs font-medium transition">
+                        {T.econSaveBtn[lang]}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Fertilizer demand by district (national roll-up) */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
         <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><MapPin size={18} className="text-emerald-600" /> {T.regionTitle[lang]}</h3>
@@ -1846,7 +2299,9 @@ function AdminCostTab({ pw, lang }) {
               {summary.series.map((s) => (
                 <div key={s.month} className="flex-1 flex flex-col items-center justify-end h-full">
                   <div className="text-[10px] text-gray-500 mb-1">{Math.round(s.total_cost).toLocaleString()}</div>
-                  <div className="w-full bg-emerald-500 rounded-t-md" style={{ height: `${Math.max(4, (s.total_cost / maxTotal) * 100)}%` }} />
+                  {/* Capped width: a bar that fills its whole slot reads as a
+                      saturated block rather than a measurable column. */}
+                  <div className="w-full max-w-[24px] bg-emerald-500 rounded-t-[4px]" style={{ height: `${Math.max(4, (s.total_cost / maxTotal) * 100)}%` }} />
                   <div className="text-[10px] text-gray-400 mt-1">{s.month}</div>
                 </div>
               ))}
@@ -2397,7 +2852,7 @@ function SoilHealthHeatmap({ regions, lang }) {
 // Admin-only panel to create + list staff accounts (government / agronomist /
 // admin). `authHeaders` carries whatever credential got us in (admin password
 // or an admin staff token).
-function StaffManager({ lang, authHeaders }) {
+function StaffManager({ lang, authHeaders, dark }) {
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ username: "", password: "", role: "government", full_name: "" });
   const [msg, setMsg] = useState(null);
@@ -2424,28 +2879,38 @@ function StaffManager({ lang, authHeaders }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-      <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Shield size={18} className="text-emerald-600" /> {T.staffMgmtTitle[lang]}</h3>
-      {msg && <div className="mb-3 text-sm text-emerald-600">{msg}</div>}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-        <input placeholder={T.staffUser[lang]} value={form.username} onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm" />
-        <input type="password" placeholder={T.staffPass[lang]} value={form.password} onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm" />
-        <input placeholder={T.staffFullName[lang]} value={form.full_name} onChange={(e) => setForm((s) => ({ ...s, full_name: e.target.value }))} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm" />
-        <select value={form.role} onChange={(e) => setForm((s) => ({ ...s, role: e.target.value }))} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50">
+    <div className={dark ? "gov-glass gov-panel mb-6" : "bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6"}>
+      <h3 className={`font-semibold mb-3 flex items-center gap-2 ${dark ? "" : "text-gray-800"}`}>
+        <Shield size={18} style={{ color: dark ? "#199e70" : undefined }} className={dark ? "" : "text-emerald-600"} /> {T.staffMgmtTitle[lang]}
+      </h3>
+      {msg && <div className="mb-3 text-sm" style={{ color: dark ? "#4ade80" : undefined }}>{!dark ? <span className="text-emerald-600">{msg}</span> : msg}</div>}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+        <input placeholder={T.staffUser[lang]} value={form.username} onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))} className={dark ? "text-sm" : "border border-gray-200 rounded-lg px-2 py-1.5 text-sm"} />
+        <input type="password" placeholder={T.staffPass[lang]} value={form.password} onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))} className={dark ? "text-sm" : "border border-gray-200 rounded-lg px-2 py-1.5 text-sm"} />
+        <input placeholder={T.staffFullName[lang]} value={form.full_name} onChange={(e) => setForm((s) => ({ ...s, full_name: e.target.value }))} className={dark ? "text-sm" : "border border-gray-200 rounded-lg px-2 py-1.5 text-sm"} />
+        <select value={form.role} onChange={(e) => setForm((s) => ({ ...s, role: e.target.value }))} className={dark ? "text-sm" : "border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50"}>
           <option value="government">government</option>
           <option value="agronomist">agronomist</option>
           <option value="admin">admin</option>
         </select>
       </div>
-      <button onClick={add} disabled={busy || !form.username.trim() || form.password.length < 4} className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg text-xs font-medium mb-3">
+      <button onClick={add} disabled={busy || !form.username.trim() || form.password.length < 4}
+        className={dark ? "gov-btn gov-btn-primary gov-btn-sm mb-4" : "inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg text-xs font-medium mb-3"}>
         <CheckCircle2 size={14} /> {T.staffAddBtn[lang]}
       </button>
       <div className="flex flex-wrap gap-2">
         {list.map((s) => (
-          <span key={s.id} className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-full px-3 py-1 text-xs">
-            <span className="font-medium text-gray-700">{s.username}</span>
-            <span className="text-emerald-600">· {s.role}</span>
-          </span>
+          dark ? (
+            <span key={s.id} className="gov-badge gov-badge-neutral">
+              <span className="font-semibold">{s.username}</span>
+              <span style={{ color: "#4ade80" }}>· {s.role}</span>
+            </span>
+          ) : (
+            <span key={s.id} className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-full px-3 py-1 text-xs">
+              <span className="font-medium text-gray-700">{s.username}</span>
+              <span className="text-emerald-600">· {s.role}</span>
+            </span>
+          )
         ))}
       </div>
     </div>
@@ -2463,6 +2928,10 @@ function NationalDashboard({ lang, onBack, langBtn }) {
   const [soil, setSoil] = useState(null);
   const [fert, setFert] = useState(null);
   const [crops, setCrops] = useState(null); // region-crops: what's grown where
+  const [tab, setTab] = useState("map");
+  const [districtFilter, setDistrictFilter] = useState(""); // also the 3D map's selection
+  const [healthFilter, setHealthFilter] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!staff) return;
@@ -2496,17 +2965,26 @@ function NationalDashboard({ lang, onBack, langBtn }) {
 
   if (!staff) {
     return (
-      <div className="min-h-screen app-bg p-4 md:p-8 flex items-center justify-center">
-        <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-4"><Shield className="text-emerald-600" size={22} /><h1 className="font-bold text-gray-800">{T.staffLoginTitle[lang]}</h1></div>
-          <label className="text-xs text-gray-500">{T.staffUser[lang]}</label>
-          <input value={user} onChange={(e) => { setUser(e.target.value); setErr(false); }} className="w-full mt-1 mb-2 border border-gray-200 rounded-xl px-3 py-2 text-sm" />
-          <label className="text-xs text-gray-500">{T.staffPass[lang]}</label>
-          <input type="password" value={pass} onChange={(e) => { setPass(e.target.value); setErr(false); }} onKeyDown={(e) => { if (e.key === "Enter") login(); }} className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-sm" />
-          {err && <p className="text-xs text-red-500 mt-1">{T.staffLoginErr[lang]}</p>}
-          <div className="flex items-center gap-2 mt-4">
-            <button onClick={login} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">{T.staffLoginBtn[lang]}</button>
-            <button onClick={onBack} className="text-sm text-gray-500 px-3 py-2">{T.backHome[lang]}</button>
+      <div className="gov-shell flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-sm gov-glass gov-panel">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="gov-user-avatar gov-pulse"><Shield size={18} /></span>
+            <div>
+              <h1 className="font-bold text-lg leading-tight">{T.staffLoginTitle[lang]}</h1>
+              <p className="text-xs gov-text-dim">{T.govPortalTag[lang]}</p>
+            </div>
+          </div>
+          <p className="text-xs gov-text-muted mb-5 mt-3">{T.govLoginHint[lang]}</p>
+
+          <label className="text-xs gov-text-muted">{T.staffUser[lang]}</label>
+          <input value={user} onChange={(e) => { setUser(e.target.value); setErr(false); }} className="w-full mt-1 mb-3" autoComplete="username" />
+          <label className="text-xs gov-text-muted">{T.staffPass[lang]}</label>
+          <input type="password" value={pass} onChange={(e) => { setPass(e.target.value); setErr(false); }} onKeyDown={(e) => { if (e.key === "Enter") login(); }} className="w-full mt-1" autoComplete="current-password" />
+          {err && <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: "#f87171" }}><XCircle size={13} /> {T.staffLoginErr[lang]}</p>}
+
+          <div className="flex items-center gap-2 mt-5">
+            <button onClick={login} className="gov-btn gov-btn-primary flex-1">{T.staffLoginBtn[lang]}</button>
+            <button onClick={onBack} className="gov-btn gov-btn-outline">{T.backHome[lang]}</button>
           </div>
         </div>
       </div>
@@ -2514,188 +2992,388 @@ function NationalDashboard({ lang, onBack, langBtn }) {
   }
 
   const soilRows = soil?.regions?.filter((r) => r.region !== "Unspecified") || [];
+  const fertRows = fert?.regions?.filter((r) => r.region !== "Unspecified") || [];
+  const districtLabel = (en) => (DISTRICT_BY_EN[en] ? (lang === "si" ? DISTRICT_BY_EN[en].si : en) : en);
+
+  // One filter set scopes every panel below, so all views show the same slice.
+  const matchesFilters = (regionEn, health) => {
+    if (districtFilter && regionEn !== districtFilter) return false;
+    if (healthFilter && healthColor(health).key !== healthFilter) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const d = DISTRICT_BY_EN[regionEn];
+      if (!regionEn.toLowerCase().includes(q) && !(d && d.si.includes(search.trim()))) return false;
+    }
+    return true;
+  };
+  const visibleSoil = soilRows.filter((r) => matchesFilters(r.region, r.health));
+  const visibleKeys = new Set(visibleSoil.map((r) => r.region));
+  const visibleFert = fertRows.filter((r) => (soilRows.length ? visibleKeys.has(r.region) : matchesFilters(r.region, null)));
+  const filtersActive = districtFilter || healthFilter || search.trim();
+
+  const totalLands = visibleSoil.reduce((s, r) => s + (r.lands || 0), 0);
+  const scored = visibleSoil.filter((r) => r.health != null);
+  const avgHealth = scored.length ? Math.round(scored.reduce((s, r) => s + r.health, 0) / scored.length) : null;
+  const totalFertCost = visibleFert.reduce((s, r) => s + (r.total_cost || 0), 0);
+  const attention = visibleSoil.filter((r) => r.health != null && r.health < 45).slice(0, 5);
+  const topDistricts = scored.slice(0, 5);
+
+  const globeDistricts = visibleSoil
+    .map((r) => {
+      const d = DISTRICT_BY_EN[r.region];
+      if (!d) return null;
+      return { key: r.region, label: districtLabel(r.region), lat: d.lat, lng: d.lng, health: r.health, lands: r.lands, avg_n: r.avg_n, avg_p: r.avg_p, avg_k: r.avg_k, avg_ph: r.avg_ph };
+    })
+    .filter(Boolean);
+
+  const nutrientChartData = visibleSoil
+    .filter((r) => r.avg_n != null || r.avg_p != null || r.avg_k != null)
+    .slice(0, 10)
+    .map((r) => ({ name: districtLabel(r.region), N: r.avg_n ?? 0, P: r.avg_p ?? 0, K: r.avg_k ?? 0 }));
+
+  const cropName = (k) => (CROPS[k] ? CROPS[k].name[lang] : k);
+  const loading = !soil && !fert && !crops;
+
+  // Crop figures follow the same filter as everything else, rebuilt from each
+  // district's own crop map rather than the national totals.
+  const cropRegions = (crops?.regions || []).filter((r) => r.region !== "Unspecified" && (soilRows.length === 0 || visibleKeys.has(r.region)));
+  const cropTallies = new Map();
+  cropRegions.forEach((r) => Object.entries(r.crops || {}).forEach(([k, n]) => cropTallies.set(k, (cropTallies.get(k) || 0) + n)));
+  const visibleCropCount = cropTallies.size;
+  const visibleCropRows = filtersActive
+    ? [...cropTallies.entries()].map(([crop_key, lands]) => ({ crop_key, lands, acres: null })).sort((a, b) => b.lands - a.lands || a.crop_key.localeCompare(b.crop_key))
+    : (crops?.crops || []);
+  const visibleCropLands = cropRegions.reduce((s, r) => s + (r.lands - (r.no_crop || 0)), 0);
+
+  const TABS = [
+    { key: "map", icon: MapIcon, label: T.govTabMap[lang] },
+    { key: "overview", icon: LayoutGrid, label: T.govTabOverview[lang] },
+    { key: "fertilizer", icon: Truck, label: T.govTabFertilizer[lang] },
+    { key: "crops", icon: Sprout, label: T.govTabCrops[lang] },
+    ...(staff.role === "admin" ? [{ key: "staff", icon: Users, label: T.govTabStaff[lang] }] : []),
+  ];
+
+  const HealthBadge = ({ health }) => {
+    const hc = healthColor(health);
+    const cls = health == null ? "gov-badge-neutral" : hc.key === "healthGood" ? "gov-badge-good" : hc.key === "healthFair" ? "gov-badge-fair" : "gov-badge-poor";
+    return (
+      <span className={`gov-badge ${cls}`}>
+        <span className="gov-dot" style={{ background: hc.color }} />
+        {health ?? "—"}{health != null && ` · ${T[hc.key][lang]}`}
+      </span>
+    );
+  };
 
   return (
-    <div className="min-h-screen app-bg p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600"><ArrowLeft size={16} /> {T.backHome[lang]}</button>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium"><Shield size={14} /> {staff.full_name || staff.username} · {staff.role}</span>
+    <div className="gov-shell p-4 md:p-7">
+      <div className="max-w-6xl mx-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+          <div className="flex items-center gap-3">
+            <span className="gov-user-avatar gov-pulse"><Shield size={18} /></span>
+            <div>
+              <h1 className="text-lg md:text-xl font-bold leading-tight">{T.natTitle[lang]}</h1>
+              <p className="text-xs gov-text-dim">{T.govPortalTag[lang]}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="gov-badge gov-badge-neutral"><Shield size={12} /> {staff.full_name || staff.username} · {staff.role}</span>
             {langBtn}
-            <button onClick={logout} className="text-sm text-gray-500 hover:text-red-600 px-3 py-2">{T.logoutBtn[lang]}</button>
+            <button onClick={onBack} className="gov-btn gov-btn-outline gov-btn-sm"><ArrowLeft size={14} /> {T.backHome[lang]}</button>
+            <button onClick={logout} className="gov-btn gov-btn-outline gov-btn-sm"><LogOut size={14} /> {T.logoutBtn[lang]}</button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-200"><Shield className="text-white" size={26} /></div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800">{T.natTitle[lang]}</h1>
-            <p className="text-sm text-gray-500">{T.natSubtitle[lang]}</p>
+        {/* KPI row */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+          <div className="gov-stat"><div className="gov-stat-label">{T.govKpiLands[lang]}</div><div className="gov-stat-value">{totalLands.toLocaleString()}</div></div>
+          <div className="gov-stat"><div className="gov-stat-label">{T.govKpiDistricts[lang]}</div><div className="gov-stat-value">{visibleSoil.length}</div></div>
+          <div className="gov-stat">
+            <div className="gov-stat-label">{T.govKpiHealth[lang]}</div>
+            <div className="gov-stat-value" style={{ color: avgHealth == null ? undefined : healthColor(avgHealth).color }}>{avgHealth ?? "—"}</div>
           </div>
+          <div className="gov-stat"><div className="gov-stat-label">{T.govKpiCrops[lang]}</div><div className="gov-stat-value">{crops ? visibleCropCount : "—"}</div></div>
+          <div className="gov-stat"><div className="gov-stat-label">{T.govKpiFertCost[lang]}</div><div className="gov-stat-value">{fert ? Math.round(totalFertCost).toLocaleString() : "—"}</div></div>
         </div>
 
-        {/* Soil health map */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><MapPin size={18} className="text-emerald-600" /> {T.natMapTitle[lang]}</h3>
-          <SoilHealthHeatmap regions={soilRows} lang={lang} />
-          <div className="flex gap-4 mt-3 text-xs text-gray-500">
-            <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: "#10b981" }} /> {T.healthGood[lang]}</span>
-            <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: "#f59e0b" }} /> {T.healthFair[lang]}</span>
-            <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: "#ef4444" }} /> {T.healthPoor[lang]}</span>
-          </div>
-        </div>
-
-        {/* Soil health table */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Leaf size={18} className="text-emerald-600" /> {T.natHealthTitle[lang]}</h3>
-          {soilRows.length === 0 ? <p className="text-sm text-gray-400">{T.natNoData[lang]}</p> : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr className="text-left text-gray-400 border-b border-gray-100">
-                  <th className="py-2 pr-3 font-medium">{T.regionCol[lang]}</th>
-                  <th className="py-2 px-2 font-medium text-right">{T.regionLands[lang]}</th>
-                  <th className="py-2 px-2 font-medium text-right">N</th>
-                  <th className="py-2 px-2 font-medium text-right">P</th>
-                  <th className="py-2 px-2 font-medium text-right">K</th>
-                  <th className="py-2 px-2 font-medium text-right">pH</th>
-                  <th className="py-2 pl-2 font-medium text-right">{T.natHealthCol[lang]}</th>
-                </tr></thead>
-                <tbody>
-                  {soilRows.map((r) => {
-                    const hc = healthColor(r.health);
-                    return (
-                      <tr key={r.region} className="border-b border-gray-50">
-                        <td className="py-2 pr-3 font-medium text-gray-700">{DISTRICT_BY_EN[r.region] ? (lang === "si" ? DISTRICT_BY_EN[r.region].si : r.region) : r.region}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{r.lands}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{r.avg_n ?? "—"}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{r.avg_p ?? "—"}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{r.avg_k ?? "—"}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{r.avg_ph ?? "—"}</td>
-                        <td className="py-2 pl-2 text-right">
-                          <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: hc.color }}>
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ background: hc.color }} />
-                            {r.health ?? "—"} {r.health != null && `· ${T[hc.key][lang]}`}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Fertilizer demand by district */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Wallet size={18} className="text-emerald-600" /> {T.regionTitle[lang]}</h3>
-          {!fert || fert.regions.filter((r) => r.region !== "Unspecified").length === 0 ? <p className="text-sm text-gray-400">{T.regionEmpty[lang]}</p> : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr className="text-left text-gray-400 border-b border-gray-100">
-                  <th className="py-2 pr-3 font-medium">{T.regionCol[lang]}</th>
-                  <th className="py-2 px-2 font-medium text-right">Urea (kg)</th>
-                  <th className="py-2 px-2 font-medium text-right">TSP (kg)</th>
-                  <th className="py-2 px-2 font-medium text-right">MOP (kg)</th>
-                  <th className="py-2 pl-2 font-medium text-right">{T.regionTotalCost[lang]}</th>
-                </tr></thead>
-                <tbody>
-                  {fert.regions.filter((r) => r.region !== "Unspecified").map((r) => (
-                    <tr key={r.region} className="border-b border-gray-50">
-                      <td className="py-2 pr-3 font-medium text-gray-700">{DISTRICT_BY_EN[r.region] ? (lang === "si" ? DISTRICT_BY_EN[r.region].si : r.region) : r.region}</td>
-                      <td className="py-2 px-2 text-right text-gray-600">{r.urea_kg.toLocaleString()}</td>
-                      <td className="py-2 px-2 text-right text-gray-600">{r.tsp_kg.toLocaleString()}</td>
-                      <td className="py-2 px-2 text-right text-gray-600">{r.mop_kg.toLocaleString()}</td>
-                      <td className="py-2 pl-2 text-right font-medium text-gray-800">{Math.round(r.total_cost).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* What's grown across the country (crop distribution) */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2"><BarChart3 size={18} className="text-emerald-600" /> {T.natCropsTitle[lang]}</h3>
-          <p className="text-xs text-gray-400 mb-4">{T.natCropsHint[lang]}</p>
-          {!crops || crops.crops.length === 0 ? <p className="text-sm text-gray-400">{T.natCropsEmpty[lang]}</p> : (() => {
-            const cropName = (k) => (CROPS[k] ? CROPS[k].name[lang] : k);
-            const maxLands = Math.max(...crops.crops.map((c) => c.lands), 1);
-            const regionRows = crops.regions.filter((r) => r.region !== "Unspecified" && r.top_crop);
+        {/* Tabs */}
+        <div className="gov-tabs mb-4">
+          {TABS.map((t) => {
+            const Icon = t.icon;
             return (
-              <>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="rounded-xl bg-emerald-50 p-3 text-center">
-                    <div className="text-lg font-bold text-emerald-700">{crops.totals.lands}</div>
-                    <div className="text-xs text-gray-500">{T.natCropsLands[lang]}</div>
-                  </div>
-                  <div className="rounded-xl bg-emerald-50 p-3 text-center">
-                    <div className="text-lg font-bold text-emerald-700">{crops.totals.crops_count}</div>
-                    <div className="text-xs text-gray-500">{T.natCropsDistinct[lang]}</div>
-                  </div>
-                  <div className="rounded-xl bg-emerald-50 p-3 text-center">
-                    <div className="text-lg font-bold text-emerald-700">{crops.totals.acres.toLocaleString()}</div>
-                    <div className="text-xs text-gray-500">{T.natCropsAcres[lang]}</div>
-                  </div>
+              <button key={t.key} onClick={() => setTab(t.key)} className={`gov-tab ${tab === t.key ? "active" : ""}`}>
+                <Icon size={15} /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Filter row — scopes every panel below */}
+        {tab !== "staff" && (
+          <div className="gov-glass rounded-2xl p-3 mb-5 flex flex-wrap items-center gap-2">
+            <Filter size={15} className="gov-text-dim ml-1" />
+            <select value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} className="text-sm">
+              <option value="">{T.govFilterDistrict[lang]}</option>
+              {soilRows.map((r) => <option key={r.region} value={r.region}>{districtLabel(r.region)}</option>)}
+            </select>
+            <select value={healthFilter} onChange={(e) => setHealthFilter(e.target.value)} className="text-sm">
+              <option value="">{T.govFilterHealth[lang]}</option>
+              <option value="healthGood">{T.healthGood[lang]}</option>
+              <option value="healthFair">{T.healthFair[lang]}</option>
+              <option value="healthPoor">{T.healthPoor[lang]}</option>
+            </select>
+            <span className="inline-flex items-center gap-2 flex-1 min-w-[180px]">
+              <Search size={14} className="gov-text-dim" style={{ marginRight: -30, zIndex: 1 }} />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={T.govSearch[lang]} className="text-sm w-full" style={{ paddingLeft: 34 }} />
+            </span>
+            {filtersActive && (
+              <button onClick={() => { setDistrictFilter(""); setHealthFilter(""); setSearch(""); }} className="gov-btn gov-btn-outline gov-btn-sm">
+                <XCircle size={13} /> {T.govClearFilters[lang]}
+              </button>
+            )}
+            <span className="gov-badge gov-badge-neutral">{T.govShowing[lang]}: {visibleSoil.length}</span>
+          </div>
+        )}
+
+        {loading && <div className="gov-glass gov-panel text-center gov-text-muted text-sm mb-5">{T.govLoading[lang]}</div>}
+
+        {/* ---- TAB: 3D map ---- */}
+        {tab === "map" && (
+          <>
+            <div className="gov-glass gov-panel mb-5">
+              <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+                <div>
+                  <h3 className="font-semibold flex items-center gap-2"><MapIcon size={17} style={{ color: "#199e70" }} /> {T.govGlobeTitle[lang]}</h3>
+                  <p className="text-xs gov-text-dim mt-1">{T.govGlobeHint[lang]}</p>
+                </div>
+                <div className="gov-chart-legend">
+                  <span><span className="gov-dot" style={{ background: "#0ca30c" }} />{T.healthGood[lang]}</span>
+                  <span><span className="gov-dot" style={{ background: "#fab219" }} />{T.healthFair[lang]}</span>
+                  <span><span className="gov-dot" style={{ background: "#d03b3b" }} />{T.healthPoor[lang]}</span>
+                </div>
+              </div>
+              {globeDistricts.length === 0 ? (
+                <p className="text-sm gov-text-muted py-8 text-center">{filtersActive ? T.govNoMatch[lang] : T.natNoData[lang]}</p>
+              ) : (
+                <DistrictGlobe3D
+                  districts={globeDistricts}
+                  colorForHealth={(h) => healthColor(h).color}
+                  selectedKey={districtFilter}
+                  onSelectDistrict={(k) => setDistrictFilter(k || "")}
+                  labels={{ lands: T.regionLands[lang], health: T.natHealthCol[lang], drag: T.govGlobeDrag[lang], pause: T.govGlobePause[lang], rotate: T.govGlobeRotate[lang], unsupported: T.govGlobeUnsupported[lang] }}
+                />
+              )}
+            </div>
+
+            {/* The flat map stays as the geographic-accuracy twin of the 3D view. */}
+            <div className="gov-glass gov-panel mb-5">
+              <h3 className="font-semibold mb-3 flex items-center gap-2"><MapPin size={17} style={{ color: "#199e70" }} /> {T.natMapTitle[lang]}</h3>
+              <SoilHealthHeatmap regions={visibleSoil} lang={lang} />
+            </div>
+          </>
+        )}
+
+        {/* ---- TAB: overview ---- */}
+        {tab === "overview" && (
+          <>
+            <div className="grid lg:grid-cols-2 gap-4 mb-5">
+              <div className="gov-glass gov-panel">
+                <h3 className="font-semibold flex items-center gap-2"><BarChart3 size={17} style={{ color: "#199e70" }} /> {T.govNutrientChart[lang]}</h3>
+                <p className="text-xs gov-text-dim mt-1 mb-3">{T.govNutrientHint[lang]}</p>
+                {nutrientChartData.length === 0 ? <p className="text-sm gov-text-muted py-6 text-center">{T.natNoData[lang]}</p> : (
+                  <>
+                    <div className="gov-chart-legend mb-2">
+                      <span><span className="gov-dot" style={{ background: "#3987e5" }} />N</span>
+                      <span><span className="gov-dot" style={{ background: "#d95926" }} />P</span>
+                      <span><span className="gov-dot" style={{ background: "#199e70" }} />K</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={240}>
+                      <BarChart data={nutrientChartData} margin={{ top: 4, right: 4, left: -18, bottom: 4 }} barGap={2}>
+                        <CartesianGrid strokeDasharray="0" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: "rgba(242,246,243,0.5)", fontSize: 11 }} axisLine={{ stroke: "rgba(255,255,255,0.12)" }} tickLine={false} interval={0} angle={-25} textAnchor="end" height={54} />
+                        <YAxis tick={{ fill: "rgba(242,246,243,0.5)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} contentStyle={{ background: "rgba(6,14,10,0.94)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12, color: "#f2f6f3" }} />
+                        <Bar dataKey="N" fill="#3987e5" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                        <Bar dataKey="P" fill="#d95926" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                        <Bar dataKey="K" fill="#199e70" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="gov-glass gov-panel">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2"><AlertTriangle size={17} style={{ color: "#d03b3b" }} /> {T.govAttention[lang]}</h3>
+                  {attention.length === 0 ? <p className="text-sm gov-text-muted">{T.govAttentionNone[lang]}</p> : (
+                    <div className="flex flex-col gap-2">
+                      {attention.map((r) => (
+                        <div key={r.region} className="gov-alert gov-alert-poor">
+                          <AlertTriangle size={15} style={{ color: "#d03b3b", flex: "none", marginTop: 2 }} />
+                          <div>
+                            <div className="font-semibold text-sm">{districtLabel(r.region)}</div>
+                            <div className="text-xs gov-text-muted">{T.govLowHealth[lang]} · {r.health} · N {r.avg_n ?? "—"} · pH {r.avg_ph ?? "—"}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="overflow-x-auto mb-6">
-                  <table className="w-full text-sm">
-                    <thead><tr className="text-left text-gray-400 border-b border-gray-100">
-                      <th className="py-2 pr-3 font-medium">{T.cropCol[lang]}</th>
-                      <th className="py-2 px-2 font-medium text-right">{T.cropLandsCol[lang]}</th>
-                      <th className="py-2 px-2 font-medium text-right">{T.cropAcresCol[lang]}</th>
-                      <th className="py-2 pl-2 font-medium w-1/3">{T.cropShareCol[lang]}</th>
+                <div className="gov-glass gov-panel">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2"><Star size={17} style={{ color: "#0ca30c" }} /> {T.govTopDistricts[lang]}</h3>
+                  {topDistricts.length === 0 ? <p className="text-sm gov-text-muted">{T.natNoData[lang]}</p> : (
+                    <div className="flex flex-col gap-2">
+                      {topDistricts.map((r) => (
+                        <div key={r.region} className="flex items-center justify-between gap-3">
+                          <span className="text-sm">{districtLabel(r.region)}</span>
+                          <HealthBadge health={r.health} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Soil health table — the table-view twin of the map + chart above */}
+            <div className="gov-glass gov-panel mb-5">
+              <h3 className="font-semibold mb-3 flex items-center gap-2"><Leaf size={17} style={{ color: "#199e70" }} /> {T.natHealthTitle[lang]}</h3>
+              {visibleSoil.length === 0 ? <p className="text-sm gov-text-muted">{filtersActive ? T.govNoMatch[lang] : T.natNoData[lang]}</p> : (
+                <div className="overflow-x-auto">
+                  <table className="gov-table">
+                    <thead><tr>
+                      <th>{T.regionCol[lang]}</th><th className="num">{T.regionLands[lang]}</th>
+                      <th className="num">N</th><th className="num">P</th><th className="num">K</th><th className="num">pH</th>
+                      <th style={{ textAlign: "right" }}>{T.natHealthCol[lang]}</th>
                     </tr></thead>
                     <tbody>
-                      {crops.crops.map((c) => (
-                        <tr key={c.crop_key} className="border-b border-gray-50">
-                          <td className="py-2 pr-3 font-medium text-gray-700">{cropName(c.crop_key)}</td>
-                          <td className="py-2 px-2 text-right text-gray-600">{c.lands}</td>
-                          <td className="py-2 px-2 text-right text-gray-600">{c.acres.toLocaleString()}</td>
-                          <td className="py-2 pl-2">
-                            <div className="h-2.5 rounded-full bg-emerald-500" style={{ width: `${Math.max(6, (c.lands / maxLands) * 100)}%` }} />
-                          </td>
+                      {visibleSoil.map((r) => (
+                        <tr key={r.region}>
+                          <td className="font-medium">{districtLabel(r.region)}</td>
+                          <td className="num">{r.lands}</td>
+                          <td className="num">{r.avg_n ?? "—"}</td>
+                          <td className="num">{r.avg_p ?? "—"}</td>
+                          <td className="num">{r.avg_k ?? "—"}</td>
+                          <td className="num">{r.avg_ph ?? "—"}</td>
+                          <td style={{ textAlign: "right" }}><HealthBadge health={r.health} /></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+              )}
+            </div>
+          </>
+        )}
 
-                {regionRows.length > 0 && (
-                  <>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">{T.natCropsByRegion[lang]}</h4>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead><tr className="text-left text-gray-400 border-b border-gray-100">
-                          <th className="py-2 pr-3 font-medium">{T.regionCol[lang]}</th>
-                          <th className="py-2 px-2 font-medium text-right">{T.regionLands[lang]}</th>
-                          <th className="py-2 px-2 font-medium text-right">{T.natCropsDistinct[lang]}</th>
-                          <th className="py-2 pl-2 font-medium">{T.topCropCol[lang]}</th>
-                        </tr></thead>
-                        <tbody>
-                          {regionRows.map((r) => (
-                            <tr key={r.region} className="border-b border-gray-50">
-                              <td className="py-2 pr-3 font-medium text-gray-700">{DISTRICT_BY_EN[r.region] ? (lang === "si" ? DISTRICT_BY_EN[r.region].si : r.region) : r.region}</td>
-                              <td className="py-2 px-2 text-right text-gray-600">{r.lands}</td>
-                              <td className="py-2 px-2 text-right text-gray-600">{r.distinct_crops}</td>
-                              <td className="py-2 pl-2 text-gray-700">{cropName(r.top_crop)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
-              </>
-            );
-          })()}
-        </div>
+        {/* ---- TAB: fertilizer ---- */}
+        {tab === "fertilizer" && (
+          <div className="gov-glass gov-panel mb-5">
+            <h3 className="font-semibold mb-3 flex items-center gap-2"><Wallet size={17} style={{ color: "#199e70" }} /> {T.regionTitle[lang]}</h3>
+            {visibleFert.length === 0 ? <p className="text-sm gov-text-muted">{filtersActive ? T.govNoMatch[lang] : T.regionEmpty[lang]}</p> : (
+              <div className="overflow-x-auto">
+                <table className="gov-table">
+                  <thead><tr>
+                    <th>{T.regionCol[lang]}</th>
+                    <th className="num">Urea (kg)</th><th className="num">TSP (kg)</th><th className="num">MOP (kg)</th>
+                    <th className="num">{T.regionTotalCost[lang]}</th>
+                  </tr></thead>
+                  <tbody>
+                    {visibleFert.map((r) => (
+                      <tr key={r.region}>
+                        <td className="font-medium">{districtLabel(r.region)}</td>
+                        <td className="num">{r.urea_kg.toLocaleString()}</td>
+                        <td className="num">{r.tsp_kg.toLocaleString()}</td>
+                        <td className="num">{r.mop_kg.toLocaleString()}</td>
+                        <td className="num font-semibold">{Math.round(r.total_cost).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ background: "rgba(255,255,255,0.03)", fontWeight: 700 }}>
+                      <td>{T.govShowing[lang]}: {visibleFert.length}</td>
+                      <td className="num">{visibleFert.reduce((s, r) => s + r.urea_kg, 0).toLocaleString()}</td>
+                      <td className="num">{visibleFert.reduce((s, r) => s + r.tsp_kg, 0).toLocaleString()}</td>
+                      <td className="num">{visibleFert.reduce((s, r) => s + r.mop_kg, 0).toLocaleString()}</td>
+                      <td className="num">{Math.round(totalFertCost).toLocaleString()}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Admin-only: staff management */}
-        {staff.role === "admin" && <StaffManager lang={lang} authHeaders={{ "X-Staff-Token": staff.token }} />}
+        {/* ---- TAB: crops ---- */}
+        {tab === "crops" && (
+          <div className="gov-glass gov-panel mb-5">
+            <h3 className="font-semibold flex items-center gap-2"><Sprout size={17} style={{ color: "#199e70" }} /> {T.natCropsTitle[lang]}</h3>
+            <p className="text-xs gov-text-dim mt-1 mb-4">{T.natCropsHint[lang]}</p>
+            {!crops || visibleCropRows.length === 0 ? <p className="text-sm gov-text-muted">{filtersActive ? T.govNoMatch[lang] : T.natCropsEmpty[lang]}</p> : (() => {
+              const maxLands = Math.max(...visibleCropRows.map((c) => c.lands), 1);
+              const regionRows = cropRegions.filter((r) => r.top_crop);
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-3 mb-5">
+                    <div className="gov-stat"><div className="gov-stat-label">{T.natCropsLands[lang]}</div><div className="gov-stat-value">{filtersActive ? visibleCropLands : crops.totals.lands}</div></div>
+                    <div className="gov-stat"><div className="gov-stat-label">{T.natCropsDistinct[lang]}</div><div className="gov-stat-value">{visibleCropCount}</div></div>
+                    <div className="gov-stat"><div className="gov-stat-label">{T.natCropsAcres[lang]}</div><div className="gov-stat-value">{filtersActive ? "—" : crops.totals.acres.toLocaleString()}</div></div>
+                  </div>
+
+                  <div className="overflow-x-auto mb-6">
+                    <table className="gov-table">
+                      <thead><tr>
+                        <th>{T.cropCol[lang]}</th><th className="num">{T.cropLandsCol[lang]}</th>
+                        <th className="num">{T.cropAcresCol[lang]}</th><th style={{ width: "34%" }}>{T.cropShareCol[lang]}</th>
+                      </tr></thead>
+                      <tbody>
+                        {visibleCropRows.map((c) => (
+                          <tr key={c.crop_key}>
+                            <td className="font-medium">{cropName(c.crop_key)}</td>
+                            <td className="num">{c.lands}</td>
+                            <td className="num">{c.acres == null ? "—" : c.acres.toLocaleString()}</td>
+                            <td>
+                              <div className="gov-bar-track"><div className="gov-bar-fill" style={{ width: `${Math.max(4, (c.lands / maxLands) * 100)}%` }} /></div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {regionRows.length > 0 && (
+                    <>
+                      <h4 className="text-sm font-semibold mb-2">{T.natCropsByRegion[lang]}</h4>
+                      <div className="overflow-x-auto">
+                        <table className="gov-table">
+                          <thead><tr>
+                            <th>{T.regionCol[lang]}</th><th className="num">{T.regionLands[lang]}</th>
+                            <th className="num">{T.natCropsDistinct[lang]}</th><th>{T.topCropCol[lang]}</th>
+                          </tr></thead>
+                          <tbody>
+                            {regionRows.map((r) => (
+                              <tr key={r.region}>
+                                <td className="font-medium">{districtLabel(r.region)}</td>
+                                <td className="num">{r.lands}</td>
+                                <td className="num">{r.distinct_crops}</td>
+                                <td>{cropName(r.top_crop)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ---- TAB: staff (admin only) ---- */}
+        {tab === "staff" && staff.role === "admin" && (
+          <StaffManager lang={lang} authHeaders={{ "X-Staff-Token": staff.token }} dark />
+        )}
       </div>
     </div>
   );
@@ -4047,6 +4725,9 @@ export default function SoilDashboard() {
             </div>
           )}
         </div>
+
+        {/* Profit analysis + what-to-plant prediction (income, cost, best market) */}
+        {session?.token && <ProfitPanel token={session.token} lang={lang} defaultSize={session.field?.size_acres} />}
 
         {/* Manual input panel */}
         {manualMode && (

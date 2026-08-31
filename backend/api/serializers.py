@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import Reading, CropGuideline, Field, FertilizerType, CostEstimate, Farm
+from .models import (Reading, CropGuideline, Field, FertilizerType, CostEstimate, Farm,
+                     Market, MarketPrice, CropEconomics)
 
 
 class ReadingSerializer(serializers.ModelSerializer):
@@ -52,3 +53,29 @@ class CostEstimateSerializer(serializers.ModelSerializer):
         model = CostEstimate
         fields = ['id', 'field', 'field_name', 'crop_key', 'size_acres', 'urea_kg', 'tsp_kg', 'mop_kg',
                   'urea_cost', 'tsp_cost', 'mop_cost', 'total_cost', 'created_at']
+
+
+class MarketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Market
+        fields = ['id', 'key', 'name_en', 'name_si', 'district', 'active']
+
+
+class MarketPriceSerializer(serializers.ModelSerializer):
+    market_key = serializers.CharField(source='market.key', read_only=True)
+    market_name = serializers.CharField(source='market.name_en', read_only=True)
+
+    class Meta:
+        model = MarketPrice
+        fields = ['id', 'market', 'market_key', 'market_name', 'crop_key',
+                  'price_per_kg', 'date', 'updated_at']
+
+
+class CropEconomicsSerializer(serializers.ModelSerializer):
+    total_cost_per_acre = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = CropEconomics
+        fields = ['id', 'crop_key', 'yield_kg_per_acre', 'fertilizer_cost_per_acre',
+                  'labor_cost_per_acre', 'seed_cost_per_acre', 'other_cost_per_acre',
+                  'total_cost_per_acre', 'updated_at']

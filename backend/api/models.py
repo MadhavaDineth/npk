@@ -170,6 +170,12 @@ class CropGuideline(models.Model):
     notes_en = models.TextField(blank=True)
     notes_si = models.TextField(blank=True)
 
+    # Current market / sale price of this crop's harvest, in LKR per kg.
+    # Admin-maintained (mirrors FertilizerType.price_per_kg) so the frontend can
+    # show crop value and later estimate income against fertilizer cost.
+    # 0 means "not set yet".
+    price_per_kg = models.FloatField(default=0)  # LKR per kg of produce
+
     class Meta:
         ordering = ['name_en']
 
@@ -224,3 +230,73 @@ class StaffAccount(models.Model):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+
+
+class Market(models.Model):
+    """A place where produce is sold (Sri Lankan Dedicated Economic Centre etc.).
+
+    Prices differ market to market, so recommending *where* to sell a crop means
+    comparing the latest MarketPrice for that crop across all active markets.
+    """
+    key = models.CharField(max_length=30, unique=True)       # 'dambulla'
+    name_en = models.CharField(max_length=80)
+    name_si = models.CharField(max_length=80, blank=True)
+    district = models.CharField(max_length=50, blank=True)   # Sri Lanka district
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name_en']
+
+    def __str__(self):
+        return self.name_en
+
+
+class MarketPrice(models.Model):
+    """The price of one crop at one market on one day (LKR per kg).
+
+    Prices are entered daily by an admin/staff. One row per (market, crop, day);
+    saving again for the same day updates that day's price. The latest day's rows
+    drive the "best market to sell" comparison and the profit/income figures.
+    """
+    market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name='prices')
+    crop_key = models.CharField(max_length=50, db_index=True)
+    price_per_kg = models.FloatField()  # LKR
+    date = models.DateField(db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date', 'market__name_en']
+        # One price per crop per market per day; re-entry updates it.
+        unique_together = ('market', 'crop_key', 'date')
+
+    def __str__(self):
+        return f"{self.crop_key} @ {self.market.key} = LKR {self.price_per_kg}/kg ({self.date})"
+
+
+class CropEconomics(models.Model):
+    """Standard per-acre yield and cost assumptions used to estimate profit.
+
+    profit/acre = yield_kg_per_acre * (best market price LKR/kg)
+                  - (fertilizer + labor + seed + other) cost per acre.
+    These are admin-editable defaults (starting figures, not gospel) so every
+    land gets an instant income/cost/profit number without farmer data entry.
+    """
+    crop_key = models.CharField(max_length=50, unique=True, db_index=True)
+    yield_kg_per_acre = models.FloatField(default=0)
+    # Per-acre cost components (LKR). Summed for total cultivation cost.
+    fertilizer_cost_per_acre = models.FloatField(default=0)
+    labor_cost_per_acre = models.FloatField(default=0)
+    seed_cost_per_acre = models.FloatField(default=0)
+    other_cost_per_acre = models.FloatField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['crop_key']
+
+    @property
+    def total_cost_per_acre(self):
+        return (self.fertilizer_cost_per_acre + self.labor_cost_per_acre
+                + self.seed_cost_per_acre + self.other_cost_per_acre)
+
+    def __str__(self):
+        return f"{self.crop_key}: {self.yield_kg_per_acre} kg/ac, cost LKR {self.total_cost_per_acre:.0f}/ac"

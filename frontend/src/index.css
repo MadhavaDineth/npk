@@ -127,12 +127,241 @@ h1, h2, h3 {
   .lift { transition: none; }
 }
 
+/* ===========================================================================
+   FARMER-FRIENDLY DESIGN LAYER
+   ---------------------------------------------------------------------------
+   The app is read by farmers on a phone, outdoors, often in bright sunlight.
+   The UI was built from small Tailwind utilities (10-12px text, light greys)
+   that are hard to read in those conditions.
+
+   Rather than rewrite ~4,700 lines of inline classes, this layer redefines the
+   handful of utilities responsible, so every screen — farmer AND admin — gets
+   the same lift. These rules are intentionally UNLAYERED: Tailwind v4 puts its
+   utilities in a cascade layer, and unlayered CSS always wins over layered CSS,
+   so no !important is needed.
+
+   Only SMALL text utilities are overridden. text-base/-2xl/-4xl are untouched,
+   which keeps the 6 responsive variants (md:text-base etc.) working.
+   =========================================================================== */
+
+/* Everything scales from the root, so a small bump lifts text, padding and
+   gaps together and keeps the existing proportions intact. */
+html {
+  font-size: 17px;
+}
+
+/* --- Legible minimums -----------------------------------------------------
+   Nothing in the UI should render below ~13px. These four utilities cover
+   ~480 usages of previously tiny text. */
+.text-\[10px\] { font-size: 0.78rem; line-height: 1.45; }
+.text-\[11px\] { font-size: 0.82rem; line-height: 1.45; }
+.text-xs       { font-size: 0.86rem; line-height: 1.5; }
+.text-sm       { font-size: 0.98rem; line-height: 1.55; }
+
+/* --- Sunlight contrast ----------------------------------------------------
+   Light greys wash out completely outdoors. Each step is darkened to at least
+   WCAG AA against white, while keeping the visual hierarchy (400 < 500 < 700). */
+.text-gray-300 { color: #64748b; }
+.text-gray-400 { color: #526172; }
+.text-gray-500 { color: #3f4b5b; }
+
+/* Labels sitting on tinted cards need weight, not just colour, to hold up. */
+.text-\[10px\], .text-\[11px\] { font-weight: 500; }
+
+/* --- Touch targets --------------------------------------------------------
+   Thumb-sized controls for use with wet or gloved hands in the field. */
+button, select, [type="button"], [type="submit"] {
+  min-height: 44px;
+}
+input[type="number"], input[type="text"], input[type="password"], input[type="date"], select {
+  min-height: 44px;
+  font-size: 1rem; /* also stops iOS Safari zooming on focus */
+}
+/* Compact inline controls (inside table cells / pill rows) stay smaller so
+   dense admin grids don't turn into a wall of buttons. */
+table button, table input, table select {
+  min-height: 36px;
+}
+
+/* --- Card definition ------------------------------------------------------
+   Flat white-on-white loses its edges in glare; a firmer border brings the
+   card boundaries back without adding visual noise. */
+.rounded-2xl.border-gray-100 { border-color: #e2e8f0; }
+
+/* --- Readable data tables -------------------------------------------------
+   17 tables across the farmer and admin screens. Roomier rows + zebra striping
+   make it far easier to track a value across a row on a small screen. */
+table { border-collapse: collapse; }
+table thead th {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #3f4b5b;
+  white-space: nowrap;
+}
+table tbody tr:nth-child(even) { background: rgba(15, 23, 42, 0.022); }
+table tbody td { padding-top: 0.55rem; padding-bottom: 0.55rem; }
+/* Numbers line up column-wise and are easier to compare at a glance. */
+table td { font-variant-numeric: tabular-nums; }
+
+/* A horizontally scrollable table should look scrollable. */
+.overflow-x-auto { -webkit-overflow-scrolling: touch; }
+
+/* --- Phone hardening ------------------------------------------------------
+   The app is Sinhala-first, and Sinhala compounds are long words with few
+   break opportunities. At large heading sizes they were pushing the whole page
+   wider than the screen, so the title and top buttons were cut off on a phone.
+   These rules keep every screen inside the viewport. */
+html, body {
+  overflow-x: hidden;      /* nothing may force a sideways scroll of the page */
+  overflow-wrap: break-word; /* long words wrap instead of widening the layout */
+}
+img, svg, canvas, video { max-width: 100%; }
+
+/* Headings step down on small screens so long Sinhala titles still fit. */
+@media (max-width: 480px) {
+  .text-4xl { font-size: 1.75rem; line-height: 1.2; }
+  .text-3xl { font-size: 1.55rem; line-height: 1.25; }
+  .text-2xl { font-size: 1.35rem; line-height: 1.3; }
+}
+
+/* ===========================================================================
+   MODERN VISUAL LAYER
+   ---------------------------------------------------------------------------
+   Sits on top of the readability layer above: same large type and contrast,
+   but a richer, more contemporary surface treatment. Applied by restyling the
+   utility combinations the app already uses (cards, primary buttons, inputs),
+   so no markup has to change and every screen updates together.
+
+   Everything here is paint-only — gradients, shadows, radii, colour. No rule
+   changes width, height or flow, so layouts cannot break.
+   =========================================================================== */
+
+:root {
+  --brand-1: #059669;
+  --brand-2: #10b981;
+  --brand-3: #34d399;
+  --ink: #0f172a;
+  --surface-border: rgba(15, 23, 42, 0.08);
+  --shadow-color: 16 24 40;
+}
+
+/* --- Depth ----------------------------------------------------------------
+   A single soft, layered shadow reads far more modern than a hard 1px box.
+   `shadow-sm` is the app's most-used card shadow, so upgrading it lifts every
+   card at once. */
+.shadow-sm {
+  box-shadow:
+    0 1px 2px rgba(var(--shadow-color) / 0.04),
+    0 6px 20px -8px rgba(var(--shadow-color) / 0.10);
+}
+.shadow-lg {
+  box-shadow:
+    0 2px 4px rgba(var(--shadow-color) / 0.05),
+    0 24px 48px -20px rgba(var(--shadow-color) / 0.28);
+}
+
+/* --- Surfaces -------------------------------------------------------------
+   Cards get a whisper of vertical gradient and a cooler, more defined edge —
+   the difference between "white box" and "crafted surface". */
+.bg-white.rounded-2xl,
+.bg-white.rounded-3xl {
+  background-image: linear-gradient(180deg, #ffffff 0%, #fcfdfe 100%);
+  border-color: var(--surface-border);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+@media (hover: hover) {
+  .bg-white.rounded-2xl:hover {
+    box-shadow:
+      0 2px 6px rgba(var(--shadow-color) / 0.06),
+      0 18px 40px -18px rgba(var(--shadow-color) / 0.22);
+  }
+}
+
+/* --- Primary actions ------------------------------------------------------
+   Flat emerald becomes a lit gradient with a coloured shadow, so the main
+   action on each screen reads as the obvious next tap. */
+.bg-emerald-600 {
+  background-image: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 55%, var(--brand-3) 130%);
+  box-shadow: 0 8px 20px -10px rgba(5, 150, 105, 0.65);
+}
+.bg-emerald-600:active { transform: translateY(1px); }
+.bg-gradient-to-br.from-emerald-500 {
+  box-shadow: 0 14px 32px -14px rgba(5, 150, 105, 0.7);
+}
+
+/* Dark neutral buttons (table "save" actions) get the same treatment. */
+.bg-gray-800 {
+  background-image: linear-gradient(135deg, #1f2937 0%, #0f172a 100%);
+}
+
+/* --- Inputs ---------------------------------------------------------------
+   Softer resting state, confident focus. */
+input, select, textarea {
+  background-color: #fbfcfd;
+  border-color: #dfe5ec;
+  border-radius: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+input:focus, select:focus, textarea:focus {
+  background-color: #ffffff;
+  border-color: var(--brand-2);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.16);
+  outline: none;
+}
+input::placeholder { color: #9aa7b6; }
+
+/* --- Pills / chips --------------------------------------------------------
+   Tinted rounded labels get a matching ring so they feel intentional. */
+.rounded-full.bg-gray-100 {
+  background-color: #f1f5f9;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* --- Numbers --------------------------------------------------------------
+   Headline figures are the product. Tight tracking + lining figures make big
+   currency values look deliberate rather than accidental. */
+.text-3xl, .text-2xl, .text-4xl {
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Emerald headline numbers pick up the brand gradient. */
+.text-3xl.text-emerald-700 {
+  background: linear-gradient(120deg, #047857 0%, #10b981 60%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* --- Background -----------------------------------------------------------
+   A calmer, deeper mesh than the original wash. */
+.app-bg {
+  background-color: #f4f8f6;
+  background-image:
+    radial-gradient(900px 460px at 108% -10%, rgba(52, 211, 153, 0.20), transparent 62%),
+    radial-gradient(820px 560px at -10% 2%, rgba(16, 185, 129, 0.16), transparent 60%),
+    radial-gradient(700px 500px at 50% 108%, rgba(251, 191, 36, 0.12), transparent 65%),
+    linear-gradient(180deg, #f0fdf6 0%, #ffffff 52%, #f7fbf8 100%);
+}
+
 /* Printing the fertilizer slip: hide the whole on-screen dashboard, then
    reveal only the .print-only slip and float it to the top of the page. Using
    visibility (not display) on the tree avoids reflow bugs; the slip itself is
    repositioned so it prints alone from the top-left. */
 .print-only { display: none; }
 @media print {
+  /* Gradient-filled text relies on a transparent fill, which many printers
+     render as nothing. Fall back to solid ink for the printed slip. */
+  .text-gradient-brand,
+  .text-3xl.text-emerald-700 {
+    background: none;
+    -webkit-text-fill-color: #047857;
+    color: #047857;
+  }
+  /* Drop decorative gradients/shadows so the slip prints clean. */
+  .bg-emerald-600, .bg-gray-800 { background-image: none; box-shadow: none; }
+  .shadow-sm, .shadow-lg { box-shadow: none; }
   body { background: #fff !important; }
   body * { visibility: hidden; }
   .print-only, .print-only * { visibility: visible; }
@@ -145,3 +374,379 @@ h1, h2, h3 {
     padding: 24px;
   }
 }
+
+/* ===========================================================================
+   GOVERNMENT / NATIONAL PORTAL — dark control-room theme
+   ---------------------------------------------------------------------------
+   Scoped entirely under .gov-shell so it never touches the farmer-facing
+   sunlight-readable layer above, and doesn't fight the global Tailwind-utility
+   overrides in that layer (e.g. .text-gray-400, .bg-emerald-600): every color
+   decision in here uses its own gov-* class, never those utility names.
+
+   Deliberately a fixed dark theme, not tied to the OS light/dark setting —
+   staff get a distinct "ops center" identity, separate from the farmer app's
+   light theme (which has no dark mode at all). Status + series colors are the
+   validated palette from the dataviz skill, checked against this surface with
+   scripts/validate_palette.js.
+   =========================================================================== */
+.gov-shell {
+  --gov-bg: #0a1310;
+  --gov-glow-1: rgba(25, 158, 112, 0.16);
+  --gov-glow-2: rgba(57, 135, 229, 0.09);
+  --gov-text: #f2f6f3;
+  --gov-text-muted: rgba(242, 246, 243, 0.58);
+  --gov-text-dim: rgba(242, 246, 243, 0.36);
+  --gov-border: rgba(255, 255, 255, 0.09);
+  --gov-glass: rgba(255, 255, 255, 0.035);
+  --gov-glass-strong: rgba(255, 255, 255, 0.065);
+  --gov-chart-surface: #0e1712;
+  --gov-grid: rgba(255, 255, 255, 0.08);
+
+  /* Status — fixed, never themed; always paired with an icon/dot + label. */
+  --gov-good: #0ca30c;
+  --gov-fair: #fab219;
+  --gov-poor: #d03b3b;
+  --gov-nodata: #7c8c85;
+
+  /* Categorical, fixed order, never reassigned: N / P / K. */
+  --gov-series-n: #3987e5;
+  --gov-series-p: #d95926;
+  --gov-series-k: #199e70;
+
+  min-height: 100vh;
+  background-color: var(--gov-bg);
+  background-image:
+    radial-gradient(1000px 560px at 15% -10%, var(--gov-glow-1), transparent 60%),
+    radial-gradient(900px 620px at 100% 10%, var(--gov-glow-2), transparent 55%);
+  color: var(--gov-text);
+}
+.gov-shell *, .gov-shell *::before, .gov-shell *::after { box-sizing: border-box; }
+.gov-shell ::selection { background: rgba(25, 158, 112, 0.32); color: #052b1c; }
+.gov-shell h1, .gov-shell h2, .gov-shell h3, .gov-shell h4 { color: var(--gov-text); letter-spacing: -0.02em; }
+.gov-text-muted { color: var(--gov-text-muted); }
+.gov-text-dim { color: var(--gov-text-dim); }
+
+/* --- surfaces --- */
+.gov-glass {
+  background: var(--gov-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--gov-border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.gov-glass-strong { background: var(--gov-glass-strong); }
+.gov-panel { border-radius: 22px; padding: 20px 22px; }
+
+/* --- inputs: override the global light-mode input skin, scoped to this shell --- */
+.gov-shell input,
+.gov-shell select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--gov-border);
+  border-radius: 999px;
+  color: var(--gov-text);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.gov-shell input::placeholder { color: var(--gov-text-dim); }
+.gov-shell select option { background: #0f1c17; color: var(--gov-text); }
+.gov-shell input:focus, .gov-shell select:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(25, 158, 112, 0.55);
+  box-shadow: 0 0 0 3px rgba(25, 158, 112, 0.16);
+  outline: none;
+}
+
+/* --- buttons --- */
+.gov-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 999px; font-weight: 600; font-size: 0.85rem;
+  padding: 0 20px; border: 1px solid transparent;
+  cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.gov-btn:active { transform: translateY(1px); }
+.gov-btn-primary {
+  background: linear-gradient(135deg, #0f6e4a, #199e70);
+  color: #fff; box-shadow: 0 8px 20px -8px rgba(15, 110, 74, 0.7);
+}
+.gov-btn-primary:hover { box-shadow: 0 10px 26px -8px rgba(15, 110, 74, 0.85); }
+.gov-btn-outline { background: rgba(255, 255, 255, 0.04); border-color: var(--gov-border); color: var(--gov-text); }
+.gov-btn-outline:hover { background: rgba(255, 255, 255, 0.08); }
+.gov-btn-sm { min-height: 36px; padding: 0 14px; font-size: 0.78rem; }
+.gov-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --- badges (status: always icon/dot + label, never color alone) --- */
+.gov-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.gov-badge-good { background: rgba(12, 163, 12, 0.18); color: #4ade80; border-color: rgba(12, 163, 12, 0.3); }
+.gov-badge-fair { background: rgba(250, 178, 25, 0.18); color: var(--gov-fair); border-color: rgba(250, 178, 25, 0.32); }
+.gov-badge-poor { background: rgba(208, 59, 59, 0.18); color: #f87171; border-color: rgba(208, 59, 59, 0.32); }
+.gov-badge-neutral { background: rgba(255, 255, 255, 0.06); color: var(--gov-text-muted); border-color: var(--gov-border); }
+.gov-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* --- nav tabs --- */
+.gov-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px; padding: 4px;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--gov-border); border-radius: 999px;
+}
+.gov-tab {
+  border: none; background: transparent; color: var(--gov-text-muted);
+  font-weight: 600; font-size: 0.85rem; padding: 9px 20px; border-radius: 999px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  transition: background 0.2s ease, color 0.2s ease; min-height: 0;
+}
+.gov-tab:hover { color: var(--gov-text); }
+.gov-tab.active { background: rgba(255, 255, 255, 0.1); color: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
+
+/* --- stat cards (value uses proportional figures, per dataviz stat-tile spec) --- */
+.gov-stat { border-radius: 20px; padding: 16px 18px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--gov-border); }
+.gov-stat-label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gov-text-dim); }
+.gov-stat-value { font-size: 1.7rem; font-weight: 800; margin-top: 4px; color: #fff; font-variant-numeric: normal; }
+
+/* --- tables (dark) --- */
+.gov-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.gov-table th {
+  text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--gov-text-dim); padding: 0 10px 10px 0; border-bottom: 1px solid var(--gov-border); white-space: nowrap;
+}
+.gov-table td { padding: 10px 10px 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.045); color: var(--gov-text); }
+.gov-table tr:last-child td { border-bottom: none; }
+.gov-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+.gov-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* --- magnitude bars (crop share list — one hue, sorted; see dataviz: >7 classes stays a table) --- */
+.gov-bar-track { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.gov-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #0f6e4a, #199e70); }
+
+/* --- chart chrome (Recharts) --- */
+.gov-chart-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.76rem; color: var(--gov-text-muted); }
+.gov-chart-legend .gov-dot { display: inline-block; margin-right: 6px; }
+.gov-chart-tooltip {
+  background: rgba(6, 14, 10, 0.92); backdrop-filter: blur(10px);
+  border: 1px solid var(--gov-border); border-radius: 12px; padding: 10px 14px;
+  font-size: 0.78rem; color: var(--gov-text);
+}
+.gov-chart-tooltip strong { display: block; margin-bottom: 4px; }
+
+/* --- 3D globe --- */
+.gov-globe {
+  width: 100%; height: 460px; border-radius: 22px; cursor: grab; touch-action: none;
+  background: radial-gradient(ellipse at 50% 30%, rgba(25, 158, 112, 0.06), transparent 65%);
+}
+.gov-globe:active { cursor: grabbing; }
+.gov-globe-tooltip {
+  position: absolute; transform: translate(-50%, -100%); pointer-events: none;
+  background: rgba(6, 14, 10, 0.9); backdrop-filter: blur(10px);
+  border: 1px solid var(--gov-border); border-radius: 14px; padding: 10px 14px;
+  font-size: 0.78rem; color: var(--gov-text); white-space: nowrap; z-index: 5;
+}
+.gov-globe-tooltip strong { display: block; font-size: 0.86rem; margin-bottom: 2px; }
+.gov-globe-tooltip-nutrients { color: var(--gov-text-muted); margin-top: 2px; }
+.gov-globe-controls { position: absolute; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.gov-globe-controls button {
+  background: rgba(6, 14, 10, 0.7); border: 1px solid var(--gov-border); color: var(--gov-text);
+  border-radius: 999px; padding: 0 14px; min-height: 34px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+}
+.gov-globe-controls button:hover { background: rgba(6, 14, 10, 0.9); }
+.gov-globe-hint { font-size: 0.7rem; color: var(--gov-text-dim); }
+
+/* --- alerts (status color + icon + label; never color alone) --- */
+.gov-alert { border-radius: 16px; padding: 10px 14px; border-left: 3px solid; display: flex; gap: 10px; align-items: flex-start; }
+.gov-alert-poor { background: rgba(208, 59, 59, 0.09); border-color: var(--gov-poor); }
+.gov-alert-fair { background: rgba(250, 178, 25, 0.09); border-color: var(--gov-fair); }
+
+.gov-user-avatar {
+  width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #0f6e4a, #199e70); color: #fff; font-weight: 700; flex: none; font-size: 0.9rem;
+}
+
+@keyframes gov-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(25, 158, 112, 0.35); } 50% { box-shadow: 0 0 0 6px rgba(25, 158, 112, 0); } }
+.gov-pulse { animation: gov-pulse 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gov-pulse { animation: none; }
+}
+
+@media (max-width: 720px) {
+  .gov-globe { height: 320px; }
+  .gov-stat-value { font-size: 1.4rem; }
+}
+
+/* ===========================================================================
+   ONE DESIGN FAMILY — part 1: LIGHT GLASS (farmer-facing screens)
+   ---------------------------------------------------------------------------
+   The farmer app and the staff portal should read as the same product. The
+   staff portal is dark (an ops centre); the farmer app stays LIGHT on purpose —
+   it is used on a phone outdoors in direct sun, and the sunlight-readability
+   layer above is not negotiable.
+
+   So the two share a design *vocabulary* rather than a palette: the same card
+   geometry, pill controls, badge rings, stat tiles and table treatment, drawn
+   on a light ground here and a dark ground there.
+
+   Paint only — radius, shadow, background, border. Nothing here changes text
+   size, colour contrast or touch-target sizing, so the sunlight layer's
+   decisions survive intact.
+   =========================================================================== */
+
+:root {
+  --glass-radius: 22px;
+  --glass-border: rgba(15, 23, 42, 0.09);
+  --glass-ring: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* --- Cards: the shared "glass panel" geometry --------------------------- */
+.bg-white.rounded-2xl,
+.bg-white.rounded-3xl {
+  border-radius: var(--glass-radius);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(250, 253, 251, 0.93) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--glass-border);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 10px 30px -14px rgba(16, 24, 40, 0.16),
+    var(--glass-ring);
+}
+
+/* Tinted info panels (emerald/amber/red/blue washes) pick up the same edge. */
+.rounded-xl.bg-emerald-50,
+.rounded-2xl.bg-emerald-50,
+.rounded-xl.bg-amber-50,
+.rounded-xl.bg-red-50,
+.rounded-xl.bg-blue-50 {
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+/* --- Pill controls, matching the staff portal's chrome ------------------- */
+.rounded-xl:is(button, a),
+button.rounded-xl,
+button.rounded-lg {
+  border-radius: 999px;
+}
+input:not([type="checkbox"]):not([type="radio"]), select {
+  border-radius: 999px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+/* Inside dense admin/table grids, keep the softer rectangle — a row of pills
+   at that size reads as noise rather than structure. */
+table input, table select { border-radius: 10px; padding-left: 9px; padding-right: 9px; }
+
+/* --- Primary action: same lit gradient + coloured lift as the portal ----- */
+.bg-emerald-600 {
+  box-shadow: 0 8px 20px -9px rgba(5, 150, 105, 0.7);
+}
+
+/* --- Badges / chips: ringed, like the portal's status pills -------------- */
+.rounded-full:is(.bg-emerald-50, .bg-amber-50, .bg-red-50, .bg-blue-50, .bg-gray-50) {
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* --- Stat tiles: the emerald mini-cards become proper figures ------------ */
+.rounded-xl.bg-emerald-50 {
+  background-image: linear-gradient(180deg, rgba(236, 253, 245, 0.95), rgba(240, 253, 244, 0.75));
+}
+
+/* --- Tables: same rhythm as the portal's ------------------------------- */
+table thead th { letter-spacing: 0.03em; }
+
+/* ===========================================================================
+   ONE DESIGN FAMILY — part 2: DARK REMAP inside .gov-shell
+   ---------------------------------------------------------------------------
+   The admin panel is staff-facing, so it belongs to the dark ops-centre world
+   with the government portal. Its markup is ~1,400 lines of light-mode Tailwind
+   utilities (bg-white, text-gray-800, border-gray-100 …). Rather than rewrite
+   all of it, this block REMAPS those utilities to their dark equivalents for
+   any markup nested inside .gov-shell.
+
+   Same cascade trick as the layer above: these rules are unlayered, so they
+   beat Tailwind's layered utilities without !important, and the two-class
+   selectors (.gov-shell .bg-white) outrank the one-class originals anyway.
+   =========================================================================== */
+
+/* Surfaces */
+.gov-shell .bg-white {
+  background-color: var(--gov-glass);
+  background-image: none;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.gov-shell .bg-gray-50 { background-color: rgba(255, 255, 255, 0.05); }
+.gov-shell .bg-gray-100 { background-color: rgba(255, 255, 255, 0.07); }
+.gov-shell .bg-emerald-50 { background-color: rgba(25, 158, 112, 0.14); }
+.gov-shell .bg-amber-50 { background-color: rgba(250, 178, 25, 0.13); }
+.gov-shell .bg-red-50 { background-color: rgba(208, 59, 59, 0.13); }
+.gov-shell .bg-blue-50 { background-color: rgba(57, 135, 229, 0.13); }
+
+/* Ink — mapped so the original hierarchy (400 < 500 < 700 < 800) survives */
+.gov-shell .text-gray-800, .gov-shell .text-gray-700 { color: var(--gov-text); }
+.gov-shell .text-gray-600 { color: rgba(242, 246, 243, 0.78); }
+.gov-shell .text-gray-500 { color: var(--gov-text-muted); }
+.gov-shell .text-gray-400, .gov-shell .text-gray-300 { color: var(--gov-text-dim); }
+.gov-shell .text-emerald-700, .gov-shell .text-emerald-600 { color: #4ade80; }
+.gov-shell .text-emerald-500, .gov-shell .text-emerald-400 { color: #6ee7a8; }
+.gov-shell .text-red-700, .gov-shell .text-red-600 { color: #f87171; }
+.gov-shell .text-red-400 { color: #fca5a5; }
+.gov-shell .text-amber-700, .gov-shell .text-amber-600, .gov-shell .text-amber-500 { color: var(--gov-fair); }
+.gov-shell .text-blue-700 { color: #8ab4d6; }
+
+/* Borders */
+.gov-shell .border-gray-100,
+.gov-shell .border-gray-200,
+.gov-shell .border-gray-50 { border-color: var(--gov-border); }
+.gov-shell .border-emerald-200,
+.gov-shell .border-emerald-300,
+.gov-shell .border-emerald-400 { border-color: rgba(25, 158, 112, 0.4); }
+.gov-shell .border-red-200 { border-color: rgba(208, 59, 59, 0.35); }
+
+/* Actions keep the portal's gradient rather than the light app's */
+.gov-shell .bg-emerald-600 {
+  background-image: linear-gradient(135deg, #0f6e4a, #199e70);
+  box-shadow: 0 8px 20px -8px rgba(15, 110, 74, 0.7);
+}
+.gov-shell .bg-gray-800 {
+  background-image: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--gov-text);
+}
+/* Amber is the reserved "fair" STATUS colour in this shell, so a button must
+   not wear it — it would read as a warning. Buttons only: the amber score-bars
+   on the farmer screens are a real status use and keep their colour. */
+.gov-shell button.bg-amber-500,
+.gov-shell button.bg-amber-600 {
+  background-color: rgba(255, 255, 255, 0.09);
+  background-image: none;
+  border: 1px solid var(--gov-border);
+  color: var(--gov-text);
+}
+
+/* Tables */
+.gov-shell table thead th { color: var(--gov-text-dim); border-bottom-color: var(--gov-border); }
+.gov-shell table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.022); }
+.gov-shell table tbody td { border-bottom-color: rgba(255, 255, 255, 0.05); }
+
+/* The light layer's gradient-filled headline numbers are invisible on dark. */
+.gov-shell .text-3xl.text-emerald-700,
+.gov-shell .text-gradient-brand {
+  background: none;
+  -webkit-text-fill-color: #4ade80;
+  color: #4ade80;
+}
+
+/* Leaflet renders a white tile canvas; damp it so it sits in the dark shell. */
+.gov-shell .leaflet-container { background: #0f1c17; }
+.gov-shell .leaflet-tile { filter: brightness(0.82) saturate(0.85); }
+
+/* The native date-picker glyph is drawn dark and disappears on a dark field. */
+.gov-shell input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.55;
+  cursor: pointer;
+}
+.gov-shell input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 0.9; }

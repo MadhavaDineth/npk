@@ -104,9 +104,9 @@ DATABASES = {
         'PORT': os.environ.get('NPK_DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
-            # This MariaDB (WAMP) defaults new tables to MyISAM, which has no
-            # foreign-key support and breaks FK migrations. Force InnoDB per
-            # connection so every table Django creates supports FKs.
+            # WAMP MySQL (3306) defaults to InnoDB already, but forcing it per
+            # connection keeps FK migrations safe on any server whose default
+            # engine is MyISAM (e.g. some MariaDB setups).
             'init_command': "SET default_storage_engine=InnoDB",
         },
     }

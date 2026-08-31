@@ -18,10 +18,12 @@ from rest_framework.response import Response
 
 from . import ml
 from . import trend
-from .models import Reading, TrainingSample, CropGuideline, Field, FertilizerType, CostEstimate, Farm, StaffAccount
+from .models import (Reading, TrainingSample, CropGuideline, Field, FertilizerType, CostEstimate,
+                     Farm, StaffAccount, Market, MarketPrice, CropEconomics)
 from .serializers import (
     ReadingSerializer, CropGuidelineSerializer,
     FieldSerializer, FertilizerTypeSerializer, CostEstimateSerializer, FarmSerializer,
+    MarketSerializer, MarketPriceSerializer, CropEconomicsSerializer,
 )
 
 # Fields a client may push. The RS485 3-in-1 sensor reports only n, p, k;
@@ -760,6 +762,205 @@ def crop_guideline_detail(request, crop_key):
     except CropGuideline.DoesNotExist:
         return Response({'error': 'unknown crop'}, status=404)
     return Response(CropGuidelineSerializer(crop).data)
+
+
+@csrf_exempt
+@require_admin
+def crop_price_update(request, crop_key):
+    """Admin-only: set a crop's market price_per_kg (X-Admin-Password header).
+
+    Mirrors fertilizer_type_update so crop sale prices are maintained the same
+    way fertilizer prices are.
+    """
+    if request.method != 'PUT':
+        return JsonResponse({'error': 'PUT required'}, status=405)
+    try:
+        crop = CropGuideline.objects.get(crop_key=crop_key)
+    except CropGuideline.DoesNotExist:
+        return JsonResponse({'error': 'unknown crop'}, status=404)
+    try:
+        price = float(json.loads(request.body.decode('utf-8') or '{}')['price_per_kg'])
+        if price < 0:
+            raise ValueError
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError):
+        return JsonResponse({'error': 'price_per_kg must be a non-negative number'}, status=400)
+    crop.price_per_kg = price
+    crop.save(update_fields=['price_per_kg'])
+    return JsonResponse(CropGuidelineSerializer(crop).data)
+
+
+# ----------------------------------------------------------------------------
+# Crop economics — daily market prices (entered per market), per-crop yield/cost
+# defaults, and the income / profit / "best market to sell" / "what to plant next"
+# figures they drive.
+# ----------------------------------------------------------------------------
+
+@api_view(['GET'])
+def markets_list(request):
+    """Every active market (Sri Lankan economic centre)."""
+    return Response(MarketSerializer(Market.objects.filter(active=True), many=True).data)
+
+
+@api_view(['GET'])
+def market_prices(request):
+    """Market prices, newest day first. Filters: ?date=YYYY-MM-DD|today, ?crop_key=."""
+    qs = MarketPrice.objects.select_related('market').all()
+    crop = request.GET.get('crop_key')
+    if crop:
+        qs = qs.filter(crop_key=crop)
+    d = request.GET.get('date')
+    if d == 'today':
+        qs = qs.filter(date=timezone.localdate())
+    elif d:
+        parsed = parse_date(d)
+        if parsed:
+            qs = qs.filter(date=parsed)
+    return Response(MarketPriceSerializer(qs, many=True).data)
+
+
+@csrf_exempt
+@require_admin
+def market_price_set(request):
+    """Admin: set/update a crop's price at a market for a day (upsert).
+
+    Body: {market_key, crop_key, price_per_kg, date?}. date defaults to today.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({'error': 'invalid JSON body'}, status=400)
+
+    market_key = str(body.get('market_key', '')).strip()
+    crop_key = str(body.get('crop_key', '')).strip()
+    if not market_key or not crop_key:
+        return JsonResponse({'error': 'market_key and crop_key are required'}, status=400)
+    try:
+        market = Market.objects.get(key=market_key)
+    except Market.DoesNotExist:
+        return JsonResponse({'error': 'unknown market'}, status=404)
+    try:
+        price = float(body['price_per_kg'])
+        if price < 0:
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'price_per_kg must be a non-negative number'}, status=400)
+
+    day = parse_date(str(body.get('date', ''))) or timezone.localdate()
+    obj, _ = MarketPrice.objects.update_or_create(
+        market=market, crop_key=crop_key, date=day,
+        defaults={'price_per_kg': price},
+    )
+    return JsonResponse(MarketPriceSerializer(obj).data)
+
+
+@api_view(['GET'])
+def crop_economics_list(request):
+    """Per-crop yield + cost-per-acre assumptions used for profit."""
+    return Response(CropEconomicsSerializer(CropEconomics.objects.all(), many=True).data)
+
+
+@csrf_exempt
+@require_admin
+def crop_economics_update(request, crop_key):
+    """Admin: update a crop's yield / cost-per-acre figures (any subset)."""
+    if request.method != 'PUT':
+        return JsonResponse({'error': 'PUT required'}, status=405)
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({'error': 'invalid JSON body'}, status=400)
+    econ, _ = CropEconomics.objects.get_or_create(crop_key=crop_key)
+    for f in ['yield_kg_per_acre', 'fertilizer_cost_per_acre', 'labor_cost_per_acre',
+              'seed_cost_per_acre', 'other_cost_per_acre']:
+        if f in body:
+            try:
+                v = float(body[f])
+                if v < 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return JsonResponse({'error': f'{f} must be a non-negative number'}, status=400)
+            setattr(econ, f, v)
+    econ.save()
+    return JsonResponse(CropEconomicsSerializer(econ).data)
+
+
+def _best_market_for_crop(crop_key):
+    """(best_row, day_rows) for a crop: highest-priced market on the most recent
+    day with data + every market's price that day. (None, []) if no price data."""
+    latest = MarketPrice.objects.filter(crop_key=crop_key).order_by('-date').first()
+    if latest is None:
+        return None, []
+    day_rows = list(MarketPrice.objects.select_related('market')
+                    .filter(crop_key=crop_key, date=latest.date)
+                    .order_by('-price_per_kg'))
+    return day_rows[0], day_rows
+
+
+def _profit_for_crop(crop_key, size_acres):
+    """Income / cost / profit for growing `crop_key` on `size_acres`, priced at the
+    best current market (fallback: the crop's reference price_per_kg)."""
+    econ = CropEconomics.objects.filter(crop_key=crop_key).first()
+    if econ is None:
+        return None
+    best, day_rows = _best_market_for_crop(crop_key)
+    if best is not None:
+        price = best.price_per_kg
+        market = {'key': best.market.key, 'name_en': best.market.name_en,
+                  'name_si': best.market.name_si, 'date': best.date.isoformat()}
+    else:
+        guide = CropGuideline.objects.filter(crop_key=crop_key).first()
+        price = guide.price_per_kg if guide else 0
+        market = None
+    income = econ.yield_kg_per_acre * price * size_acres
+    cost = econ.total_cost_per_acre * size_acres
+    return {
+        'crop_key': crop_key,
+        'size_acres': size_acres,
+        'price_per_kg': price,
+        'yield_kg_per_acre': econ.yield_kg_per_acre,
+        'income': round(income, 2),
+        'cost': round(cost, 2),
+        'profit': round(income - cost, 2),
+        'best_market': market,
+        'all_markets': [{'key': r.market.key, 'name_en': r.market.name_en,
+                         'price_per_kg': r.price_per_kg} for r in day_rows],
+    }
+
+
+@require_land
+def land_profit(request):
+    """Income / cost / profit for the logged-in land's current crop + where to sell."""
+    land = request.land
+    if not land.crop_key:
+        return JsonResponse({'error': 'this land has no crop set'}, status=400)
+    result = _profit_for_crop(land.crop_key, land.size_acres or 1)
+    if result is None:
+        return JsonResponse({'error': 'no economics for this crop yet'}, status=404)
+    return JsonResponse(result)
+
+
+@require_land
+def land_profit_predict(request):
+    """Predicted profit for every crop on this land, best profit first.
+
+    Answers "if I plant crop X here instead, what profit?" — each crop's standard
+    yield priced at its best market minus its cost, scaled to the land's area.
+    Defaults to the land's registered size; ?size_acres= overrides it for a what-if."""
+    size = request.land.size_acres or 1
+    override = request.GET.get('size_acres')
+    if override:
+        try:
+            v = float(override)
+            if v > 0:
+                size = v
+        except (TypeError, ValueError):
+            pass
+    rows = [r for econ in CropEconomics.objects.all()
+            if (r := _profit_for_crop(econ.crop_key, size)) is not None]
+    rows.sort(key=lambda x: x['profit'], reverse=True)
+    return JsonResponse({'size_acres': size, 'current_crop': request.land.crop_key, 'crops': rows})
 
 
 @api_view(['GET'])

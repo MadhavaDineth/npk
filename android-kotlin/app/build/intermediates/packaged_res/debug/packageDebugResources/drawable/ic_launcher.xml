@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Green rounded background -->
+    <path
+        android:fillColor="#059669"
+        android:pathData="M0,24 A24,24 0 0,1 24,0 L84,0 A24,24 0 0,1 108,24 L108,84 A24,24 0 0,1 84,108 L24,108 A24,24 0 0,1 0,84 Z" />
+    <!-- Simple white sprout: a stem and two leaves -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,78 C54,64 54,58 54,50 L58,50 C58,60 58,70 58,78 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56,54 C46,54 38,48 36,38 C50,36 58,44 56,54 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56,50 C66,50 74,44 76,34 C62,32 54,40 56,50 Z" />
+</vector>

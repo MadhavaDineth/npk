@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NPK Soil Monitor</string>
+    <style name="Theme.NPK" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#059669</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

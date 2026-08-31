@@ -29,6 +29,16 @@ urlpatterns = [
     # Crop guidelines + historical data (DRF).
     path('crops/', views.crop_guidelines, name='crop_guidelines'),
     path('crops/<str:crop_key>/guideline/', views.crop_guideline_detail, name='crop_guideline_detail'),
+    path('crops/<str:crop_key>/price/', views.crop_price_update, name='crop_price_update'),
+
+    # Crop economics: markets, daily market prices, per-crop yield/cost, profit.
+    path('markets/', views.markets_list, name='markets_list'),
+    path('market-prices/', views.market_prices, name='market_prices'),
+    path('market-prices/set/', views.market_price_set, name='market_price_set'),
+    path('crop-economics/', views.crop_economics_list, name='crop_economics_list'),
+    path('crop-economics/<str:crop_key>/', views.crop_economics_update, name='crop_economics_update'),
+    path('land/profit/', views.land_profit, name='land_profit'),
+    path('land/profit-predict/', views.land_profit_predict, name='land_profit_predict'),
     path('readings/', views.readings_history, name='readings_history'),
     path('compare/', views.compare_reading, name='compare_reading'),
     path('predict-trend/', views.predict_trend, name='predict_trend'),
